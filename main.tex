@@ -1,0 +1,70 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Template for ASPLOS papers.
+%
+% History:
+% 
+% ASPLOS originally used jpaper.cls for submission but required acmart.cls for the
+% final camera-ready version. To avoid a change in format, starting ASPLOS 2024 Fall 
+% cycle, both the submission and the camera-ready versions started using acmart.cls.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% use the base acmart.cls version 1.92
+% use the sigplan proceeding template with the default 10 pt fonts
+% nonacm option removes ACM related text in the submission. 
+\documentclass[nonacm,sigplan]{acmart}
+
+% enable page numbers
+\settopmatter{printfolios=true}
+
+% make references clickable 
+\usepackage[]{hyperref}
+
+\begin{document}
+
+\title{CacheInf: Collaborative Edge-Cloud Cache System for Efficient Robotic Visual Model Inference}
+
+%\author{...} % removed for anonymity
+
+\begin{abstract}
+  Placeholder
+  Placeholder
+  Placeholder
+  Placeholder
+\end{abstract}
+
+\maketitle % should come after the abstract
+\pagestyle{plain} % should come right after \maketitle
+
+
+\section{Introduction}
+\input{src/intro.tex}
+
+\section{Background}
+\input{src/background.tex}
+
+\section{System Overview}
+\input{src/overview.tex}
+
+\section{Implementation}
+
+\input{src/impl.tex}
+
+\section{Evaluation}
+\input{src/evaluation.tex}
+
+
+
+
+\section{Conclusion}
+\input{src/conclusion.tex}
+
+
+\section{Conclusions}
+
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
+
