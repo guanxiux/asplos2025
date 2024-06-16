@@ -19,6 +19,14 @@
 
 % make references clickable 
 \usepackage[]{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subfig}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[ruled,linesnumbered]{algorithm2e}
+\newcommand{\myparagraph}[1]{\textbf{#1.}}
+\setlength{\parskip}{0pt}
 
 \begin{document}
 
@@ -50,8 +58,10 @@
 \section{System Overview}
 \input{src/overview.tex}
 
-\section{Implementation}
+\section{Design}
+\input{src/design.tex}
 
+\section{Implementation}
 \input{src/impl.tex}
 
 \section{Evaluation}
@@ -64,7 +74,6 @@
 \input{src/conclusion.tex}
 
 
-\section{Conclusions}
 
 
 \bibliographystyle{plain}
