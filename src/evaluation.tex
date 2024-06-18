@@ -39,7 +39,7 @@ The evaluation questions are as follows:
 \begin{itemize}
     \item RQ1: How much does CacheInf benefit real-world robotic applications by reducing inference time and energy consumption?
     \item RQ2: How does CacheInf perform on more models common to mobile devices?
-    \item RQ3: How is the above gain achieved in CacheInf?
+    \item RQ3: How is the above gain achieved in CacheInf and what affects it?
     \item RQ4: What are the limitations and potentials of CacheInf?
 \end{itemize}
 
@@ -204,6 +204,17 @@ of parameters)&  & indoors & outdoors & indoors & outdoors \\
     \label{tab:torchvision_power}
 \end{table*}
 
-\subsection{Breakdown}
+\subsection{Sensitivity}
+\subsubsection{Identification Metric of Reusable Cache}
+
+\begin{table}
+    \caption[accuracy]{How different identification metric of reusable cache affects the inference latency of CacheInf and the accuracy of visual models.}
+\end{table}
+
+\subsection{Sampling Rate of Video Frames}
+
+\begin{table}
+    \caption[sample rates]{How the sampling rate of video frames influence the performance of CacheInf.}
+\end{table}
 
 \subsection{Discussion}
