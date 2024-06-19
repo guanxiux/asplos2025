@@ -2,11 +2,16 @@ Visual information is vital for various robotic tasks deployed on real-world edg
 and as a major visual information processing method, fast visual model inference is important for the real-world robotic tasks to timely respond to environment changes. 
 Unfortunately, the mobile robots often suffer slow visual model inference, because they are typically limited in computation power and have limited and unstable wireless network bandwidth, making both local computation and naively offloading the computation to GPU servers slow.
 
-To tackle this problem, we observe the facts that the input for the robotic visual models is typically a continual stream of images and these models mostly compute on the images using local operators (i.e., operators such as convolution that relies on local geometries of the input images).
-In such cases, the classic caching mechanism can be introduced to accelerate robotic visual model inference: computation results of similar local geometries between consecutive images can be reused to shrink the overall size of the computation, which reduce both local computation time and transmission time when offloading computation to the GPU server.
+To tackle this problem, we observe that introducing the classic caching mechanism into robotic visual model inference has the potential to accelerate both local computation and offloading the computation to GPU servers.
+It is based on the facts that the input for the robotic visual models is typically a continual stream of images and these models mostly compute on the images using local operators (i.e., operators such as convolution that relies on local geometries of the input images).
+In such cases, computation results of similar local geometries between consecutive images can be reused to shrink the overall size of the computation, which reduce both local computation time and transmission time when offloading computation to the GPU server.
 
-However, there is a major gap to apply the existing caching systems for visual models to robotic tasks on mobile robots.
-They are designed for interactive generative image edition on high-end PCs which assumes no image perspective transformation, consumes too much memory and does not consider the acceleration opportunity of offloading, unfit for robotic tasks on mobile robots.
+However, the existing caching systems for visual models are designed for interactive generative image edition on high-end PCs and unfit for robotic tasks on mobile robots.
+With their targeted scenario, they assume no perspective changes in the images, consume too much memory and does not consider the acceleration opportunity of offloading the computation to other GPU servers.
+A new caching system specifically designed for robotic visual model inference is desired.
+
+% However, there is a major gap to apply the existing caching systems for visual models to robotic tasks on mobile robots.
+% They are designed for interactive generative image edition on high-end PCs which assumes no image perspective transformation, consumes too much memory and does not consider the acceleration opportunity of offloading, unfit for robotic tasks on mobile robots.
 
 % When such gap is fulfilled and caching of computation results on consecutive images is enabled in robotic tasks on mobile robots, on one hand local computation time will be reduced by reusing cache, on the other hand we can collaboratively consider cache both on the robot and the offloading server and further reduce transmission data volume when offloading computation to the server.
 % Enabling caching 
