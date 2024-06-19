@@ -129,7 +129,7 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
     \label{tab:e2e_power}
 \end{table*}
 
-\subsection{Performance on Other Common Models}
+\subsection{Performance on Various Common Models}
 
 \begin{table*}[htb]
 
@@ -216,23 +216,46 @@ of parameters)&  & indoors & outdoors & indoors & outdoors \\
     \label{tab:torchvision_power}
 \end{table*}
 
-\subsection{Sensitivity}
-\subsubsection{Identification Metric of Reusable Cache}
+\subsection{Micro-Event}
+\begin{figure}
+    \includegraphics[width=0.98\linewidth]{fig/MicroEvent2.png}
+    \caption[short]{Micro-events about inference latency of different systems at different wireless network bandwidth.}
+\end{figure}
 
-\begin{table}[!h]
-    \begin{tabular}{c|c|c|c|c|c|}
+
+\begin{figure}
+    \includegraphics[width=0.98\linewidth]{fig/MicroEvent2.png}
+    \caption[short]{TODO Micro-events about inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
+\end{figure}
+
+\subsection{Sensitivity}
+
+\begin{table*}[htb]
+    \begin{tabular}{c|c|c|c|c}
         \toprule
-        \multirow[c]{2}{*}{Model} & \multirow[c]{2}{*}{Statistics} & \multicolumn{3}{|c|}{Identification Metric(n)} \\
+        \multirow[c]{2}{*}{Model} & \multirow[c]{2}{*}{Statistics} & \multicolumn{3}{c}{Difference Filter Parameter (n)} \\
+        \cline{3-5}
         & & 50 & 70 & 130 \\
+        \midrule
+        \bottomrule
 
     \end{tabular}
-    \caption[accuracy]{How different identification metric of reusable cache affects the inference latency of CacheInf and the accuracy of visual models.}
-\end{table}
+    \caption[accuracy]{How different difference filter parameter (n) for identifying reusable cache affects the inference latency of CacheInf and the accuracy of visual models.}
+\end{table*}
 
 \subsection{Sampling Rate of Video Frames}
 
-\begin{table}[htb]
+\begin{table*}[htb]
+    \begin{tabular}{c|c|c|c|c}
+        \toprule
+        \multirow[c]{2}{*}{Model} & \multirow[c]{2}{*}{Statistics} & \multicolumn{3}{|c}{Sampling rate} \\
+        \cline{3-5}
+        & & 1 & 2 & 4 \\
+        \midrule
+        \bottomrule
+
+    \end{tabular}
     \caption[sample rates]{How the sampling rate of video frames influence the performance of CacheInf.}
-\end{table}
+\end{table*}
 
 \subsection{Discussion}

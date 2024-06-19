@@ -9,12 +9,12 @@ While the requirements of real-time inference does not necessarily imply the req
 \subsection{Architecture of CacheInf}
 To reduce inference latency by reusing cached previous computation results to both reduce local computation time and transmission time of offloading, CacheInf basically consists of three blocks: a scheduler, a cache tracker and an executor (TODO fix the names).
 
-\begin{figure}
+\begin{figure*}[!htb]
     \centering
-    \includegraphics[width=\linewidth]{fig/overview_track.drawio.pdf}
-    \caption[track]{The process to track reusable previous inference result, reorganize and compute on smaller input and finally form computation reusable for the current image.}
-    \label{fig:track}
-\end{figure}
+    \includegraphics[width=\linewidth]{fig/overview.pdf}
+    \caption[track]{Architecture and working process of CacheInf. TODO...}
+    \label{fig:overview}
+\end{figure*}
 
 \subsubsection*{Scheduler (TODO fix the names)}
 During the initialization stage of the robotic task and CacheInf, CacheInf is granted access to the visual model and an initial input image and we mainly greedily pre-compute a schedule of various situations at this stage, since scheduling at runtime affects the real-time performance of the robotic task.
