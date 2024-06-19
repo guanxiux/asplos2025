@@ -21,7 +21,7 @@ A new caching system specifically designed for robotic visual model inference is
 % To tackle this problem, we seek opportunity from the facts that the input for the robotic visual models are typically a continual stream of images and the models mostly compute on these images using local operators (i.e., operators such as convolution that relies on local geometries of the input images).
 % These imply that between visual model inference on consecutive images in visual robotic tasks, part of the previous computed results of local operators can be cached and reused, providing opportunity to both reduce local computation time and reduce transmission data volume, accelerating the overall visual model inference.
 
-To fulfill such gap, in this paper, we propose CacheInf, a collaborative edge-cloud cache system for efficient robotic visual model inference.
+To fulfill this gap, in this paper, we propose CacheInf, a collaborative edge-cloud cache system for efficient robotic visual model inference.
 Given a continuous stream of visual input in a robotic visual task, CacheInf analyses the overlapping area between consecutive inputs;
 based on the portion of overlapping area (reusable cache) and the current estimated wireless network bandwidth, CacheInf schedules on the action between reusing local cache to reduce local computation time and reusing the remote cache (e.g., the cache at the GPU server side from the robot's perspective) to reduce transmission time, to ultimately reduce the overall visual model inference latency.
 % Schedule cache and offloading...
