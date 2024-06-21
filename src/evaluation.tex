@@ -1,15 +1,15 @@
 \subsection{Evaluation Settings}
 \myparagraph{Testbed}
-\begin{figure}
-    \includegraphics[width=\linewidth]{fig/robot.png}
-    \caption[agr robot]{The composition of four-wheeled robot used in our evaluation.}
+
+\begin{figure}[!t]
+    \centering
+    \subfloat[Four-wheeled robot]{\includegraphics[width=0.48\linewidth]{fig/robot.png}}
+    \hfil
+    \subfloat[Air-ground robot]{\includegraphics[width=0.48\linewidth]{fig/agr_robot.png}}
+    \caption{The composition of the four-wheeled robot and the air-ground robot used in our evaluation.}
     \label{fig:robot}
 \end{figure}
-\begin{figure}
-    \includegraphics[width=\linewidth]{fig/agr_robot.png}
-    \caption[agr robot]{The composition of air-ground robot used in our evaluation.}
-    \label{fig:agr}
-\end{figure}
+
 The evaluation was conducted on a custom four-wheeled robot (Fig~\ref{fig:robot}), and a custom air-ground robot(Fig~\ref{fig:agr}).
 They are equipped with a Jetson Xavier NX~\cite{jetsonnx} 8G onboard computer that is capable of AI model inference with local computation resources. 
 The system runs Ubuntu 20.04 with ROS Noetic and a dual-band USB network card (MediaTek MT76x2U) for wireless connectivity. 
@@ -217,15 +217,15 @@ of parameters)&  & indoors & outdoors & indoors & outdoors \\
 \end{table*}
 
 \subsection{Micro-Event}
-\begin{figure}
+\begin{figure}[htb]
     \includegraphics[width=0.98\linewidth]{fig/MicroEvent2.png}
     \caption[short]{Micro-events about inference latency of different systems at different wireless network bandwidth.}
 \end{figure}
 
 
-\begin{figure}
-    \includegraphics[width=0.98\linewidth]{fig/MicroEvent2.png}
-    \caption[short]{TODO Micro-events about inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
+\begin{figure}[htb]
+    \includegraphics[width=0.98\linewidth]{fig/MicroEvent3.png}
+    \caption[short]{Micro-events about inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
 \end{figure}
 
 \subsection{Sensitivity}
