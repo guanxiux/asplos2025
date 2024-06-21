@@ -7,6 +7,8 @@ Since the computation of local operators relies on local geometries, the same tr
 
 While the above process minimizes error between $\hat{I_j}$ and $I_{j+1}$, the remaining difference between them are the areas of new information which are uncached and needed to be recomputed.
 We filter and identify these areas by applying average pooling over the difference between $\hat{I_j}$ and $I_{j+1}$ and the pixels with computed difference greater than an preset threshold $N$ will be marked as needed to be recomputed as in Equation~\ref{eq:avg_pool}, where $uv$ is the pixel coordinates.
+
+TODO change to sparse convolution
 With the pixels needed to be recomputed detected, we cluster these pixels and reorganize their bounding boxes into a new rectangle. 
 Note that the bounding boxes can be padded with an offset depending on the computation that these new rectangle will go through to ensure the correctness of computation, which will be elaborated in the next subsection.
 
