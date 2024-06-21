@@ -1,0 +1,33 @@
+This chapter presents the detailed design for CacheInf to fulfill the functionality of tracking and reusing cached computation results and scheduling for actions among local computation, offloading or hybrid, with or without cache, to optimally reduce visual model inference latency for mobile robots.
+
+\subsection{Identifying and Reusing Cached Computation Result}
+To find and match similar local geometries between consecutive images in a stream of images $\textbf{I}=\{I_1, I_2, ..., I_n\}$ to identify reusable cache, we use the standard image matching procedure: given a pair of consecutive images $I_j$ and $I_{j+1}$, their key points and key point descriptors (or feature vectors) are computed and matched within a distance threshold of the feature vectors; then a homography matrix $M$ is computed based on the corresponding relationship between the key points on each image which minimizes the transformation error.
+The resulting homography matrix can then be used to apply perspective transformation to $I_j$ to form a new image $\hat{I_j}$ closest to $I_{j+1}$, which is depicted in the Feature Based Transformed Image in Fig.~\ref{fig:overview}.
+Since the computation of local operators relies on local geometries, the same transformation can be applied 
+
+While the above process minimizes error between $\hat{I_j}$ and $I_{j+1}$, the remaining difference between them are the areas of new information which are uncached and needed to be recomputed.
+We filter and identify these areas by applying average pooling over the difference between $\hat{I_j}$ and $I_{j+1}$ and the pixels with computed difference greater than an preset threshold $N$ will be marked as needed to be recomputed as in Equation~\ref{eq:avg_pool}, where $uv$ is the pixel coordinates.
+With the pixels needed to be recomputed detected, we cluster these pixels and reorganize their bounding boxes into a new rectangle. 
+Note that the bounding boxes can be padded with an offset depending on the computation that these new rectangle will go through to ensure the correctness of computation, which will be elaborated in the next subsection.
+
+\begin{equation}
+    recompute^{uv}=\left\{
+        \begin{aligned}
+        True & , & AveragePooling(|\hat{I_j} - I_{j+1}|)^{uv} \geq N, \\
+        False & , & AveragePooling(|\hat{I_j} - I_{j+1}|)^{uv} < N.
+        \end{aligned}
+    \right. 
+    \label{eq:avg_pool}
+\end{equation}
+
+
+
+
+matched appearance to filtered matched region 
+
+matched region to bboxes 
+
+bboxes correspond to the output and recover
+
+
+\subsection{Cache-Aware Scheduling}
