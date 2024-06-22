@@ -1,35 +1,81 @@
 This chapter presents the detailed design for CacheInf to fulfill the functionality of tracking and reusing cached computation results and scheduling for actions among local computation, offloading or hybrid, with or without cache, to optimally reduce visual model inference latency for mobile robots.
 
-\subsection{Identifying and Reusing Cached Computation Result}
-To find and match similar local geometries between consecutive images in a stream of images $\textbf{I}=\{I_1, I_2, ..., I_n\}$ to identify reusable cache, we use the standard image matching procedure: given a pair of consecutive images $I_j$ and $I_{j+1}$, their key points and key point descriptors (or feature vectors) are computed and matched within a distance threshold of the feature vectors; then a homography matrix $M$ is computed based on the corresponding relationship between the key points on each image which minimizes the transformation error.
-The resulting homography matrix can then be used to apply perspective transformation to $I_j$ to form a new image $\hat{I_j}$ closest to $I_{j+1}$, which is depicted in the Feature Based Transformed Image in Fig.~\ref{fig:overview}.
-Since the computation of local operators relies on local geometries, the same transformation can be applied 
+\subsection{Identifying Reusable Computation Results}
+To find and match similar local geometries between consecutive images in a stream of images $\textit{\textbf{I}}=\{I_1, I_2, ..., I_n\}$ to identify reusable cache, we use the standard image stitching procedure: given a pair of consecutive images $I_j$ and $I_{j+1}$, their key points and key point descriptors (or feature vectors) are computed and matched within a distance threshold of the feature vectors; then a homography matrix $M$ is computed based on the corresponding relationship between the key points on each image which minimizes the error.
+The resulting homography matrix is then used to apply perspective transformation to each pixel in $I_j$ to form a new image $\hat{I}_{j+1}$ closest to $I_{j+1}$ as shown in Equation~\ref{eq: pt}, where $(u_j,v_j)$ and $(\hat{u}_{j+1},\hat{v}_{j+1})$ and pixel indices on $I_j$ and $\hat{I}_{j+1}$.
+It is also depicted in the Feature Based Transformed Image in Fig.~\ref{fig:overview}.
+Since the computation of local operators relies on local geometries, the same transformation can be applied to intermediate computation results of the following local operators.
+\begin{equation}
+    (\hat{u}_{j+1},\hat{v}_{j+1},1) = M \times (u_j,v_j,1)
+    \label{eq: pt}
+\end{equation}
 
-While the above process minimizes error between $\hat{I_j}$ and $I_{j+1}$, the remaining difference between them are the areas of new information which are uncached and needed to be recomputed.
-We filter and identify these areas by applying average pooling over the difference between $\hat{I_j}$ and $I_{j+1}$ and the pixels with computed difference greater than an preset threshold $N$ will be marked as needed to be recomputed as in Equation~\ref{eq:avg_pool}, where $uv$ is the pixel coordinates.
-
-TODO change to sparse convolution
-With the pixels needed to be recomputed detected, we cluster these pixels and reorganize their bounding boxes into a new rectangle. 
-Note that the bounding boxes can be padded with an offset depending on the computation that these new rectangle will go through to ensure the correctness of computation, which will be elaborated in the next subsection.
+While the above process minimizes error between $\hat{I}_{j+1}$ and $I_{j+1}$, the remaining difference between them are the areas of new information which are uncached and needed to be recomputed.
+We filter and identify these areas by applying average pooling over the difference between $\hat{I}_{j+1}$ and $I_{j+1}$ and the pixels with computed difference greater than a preset threshold $N$ will be marked as needed to be recomputed as in Equation~\ref{eq:avg_pool}, where $u,v$ are the pixel indices.
 
 \begin{equation}
-    recompute^{uv}=\left\{
-        \begin{aligned}
-        True & , & AveragePooling(|\hat{I_j} - I_{j+1}|)^{uv} \geq N, \\
-        False & , & AveragePooling(|\hat{I_j} - I_{j+1}|)^{uv} < N.
-        \end{aligned}
-    \right. 
+    \textit{\textbf{uv}} = \{(u,v)|AveragePooling(|\hat{I}_{j+1} - I_{j+1}|)^{u,v} \geq N\}
     \label{eq:avg_pool}
 \end{equation}
 
+Suppose there are $Q$ pixels in \textit{\textbf{uv}} and $H$x$W$ total pixels in each image,
+we define the cache ratio between $I_j$ and $I_{j+1}$ as 
+\begin{equation}
+    r_j = \frac{Q}{H\cdot W}
+\end{equation}
 
+\subsection{Sparse Local Operators}
+From the above discussion, we have identified the pixels needed to recompute \textit{\textbf{uv}} and we suppose their corresponding features $f_{inp}$ are of size $B$x$C_1$x$Q$, along with the cached input defined as $I'_{inp}$ of size $B$x$C_1$x$H$x$W$.
+Now we focus on how to compute the correct results based \textit{\textbf{uv}}, $f_{inp}$ and $I'_{inp}$.
+There are mainly two kinds of local operators: element-wise local operators such as addition, subtraction, multiplication and division, which solely depends on the value of each element; and convolution local operators such as convolution, average pooling and max pooling, which is influenced by the surrounding areas (e.g., a 2D kernel) of each element .
+We mainly focus on the latter type of local operators since the element-wise local operators can be viewed as a special case of convolution local operators where the surrounding area is of size one.
 
+We first consider the scenario with dense input.
+Assume an image (or feature map) $I_{inp}$ of size $B$x$C_1$x$H$x$W$, a convolution local operator $K$ with its kernel sized $C_2$x$C_1$x$K_1$x$K_2$, stride 1 and no padding and its output feature map $I_{out}$ of size $B$x$C_2$x$H'$x$W'$, then each of the value of the output feature map is determined by
+\begin{equation}
+    I_{out}^{i,j,k,l} = \sum_{c=1}^{C_1} \sum_{m=1}^{K_1} \sum_{n=1}^{K_2} K^{j,c,m,n} * I_{inp}^{i,c,k+m-1,l+n-1}, 
+    \label{eq:kernel}
+\end{equation}
+Omitting the batch dimension and the channel dimension (first two dimension) of $I_{out}$, we can learn from Equation~\ref{eq:kernel} that an output value is determined by an area of $K_1$x$K_2$ on $I_{inp}$ and we define pixels in this area as
+\begin{equation}
+    P_{k,l} = \{(u,v)|k\leq u < k+K_1 \land l\leq v < l+K_2\}
+    \label{eq:set}
+\end{equation}
+where $(k,l)$ is the pixels indices on $I_{out}$.
 
-matched appearance to filtered matched region 
+Moving to the sparse scenario, 
+the indices of pixels on $I_{out}$ that have updated value with \textit{\textbf{uv}} as input would be 
+\begin{equation}
+\textit{\textbf{uv}}' = \{(k,l)|\exists P_{k,l}, s.t. P_{k,l}\cap \textit{\textbf{uv}} \neq \emptyset\}
+\end{equation} 
+which can be view as wrapping around pixels in \textit{\textbf{uv}} by $K_1$x$K_2$ and may involve pixels in $I'_{inp}$.
 
-matched region to bboxes 
+Note that $\textit{\textbf{uv}}$ and cached input $I'_{inp}$ are possibly in different planes determined by the homography matrix $M$.
+We may transform the cached intermediates every time before computation, but it will unfortunately involve computation of the whole feature map and invalidate the acceleration of sparse computation.
+Instead, during computation we query the original cached intermediates by transforming the pixel indices with $M$:
+\begin{equation}
+    F(i,j,u,v, I'_{inp}, f_{inp}) = \left\{
+        \begin{aligned}
+            f_{inp}^{i,j,u,v}  & , & (u,v) \in \textit{\textbf{uv}}, \\
+            {I'}_{inp}^{i,j,G(u,v,M)} &, & (u,v) \notin \textit{\textbf{uv}}
+        \end{aligned}
+        \right. 
+    \label{eq:query}
+\end{equation}
+where $G(u,v,M) = H^{-1}(M^{-1}\times H((u,v)))$ which transforms $(u,v)$ into the plane of cached input $I'_{inp}$, and $H(\cdot)$ and $H^{-1}(\cdot)$ means turning a vector to a homogeneous vectors and the opposite.
+To minimize performance impact to update $I'_{inp}$, we update $I'_{inp}$ by transforming $I'_{inp}$ and merge it with $f_{inp}$ only after the whole computation process finishes, when the system is typically idle and waiting for the next input.
 
-bboxes correspond to the output and recover
+For $(u,v)\in\textit{\textbf{uv}}'$
+\begin{equation}
+    f_{out}^{i,j,u,v} = \sum_{c=1}^{C_1} \sum_{m=1}^{K_1} \sum_{n=1}^{K_2} K^{j,c,m,n}\cdot F(i,c,k+m-1,l+n-1, I'_{inp}, f_{inp})
+\end{equation}
+Until now we get the indices of the altered output values in output feature map $\textit{\textbf{uv}}'$ and the corresponding features $f_{out}$ which can then be passed to the subsequent computation.
+Along the local operators where local geometries are preserved, we can repeat the above process by passing only the sparse features and their indices and do not need to merge the sparse features with cache.
+When a non-local operator is met (e.g., matrix multiplication), we transform its cached input with $M$ and merge $f_{inp}$ into the transformed input according to their sparse indices $\textit{\textbf{uv}}$, which recovers the correct geometries of the whole feature map.
+
+Also, to save memory consumption of cached intermediates, notice that the above process is basically wrapping the sparse pixels with the kernel size $K_1$x$K_2$ and computing on the wrapped pixels, we can merge the query process in Equation~\ref{eq:query} of multiple convolution local operators into the first convolution local operator.
+For example, if a next operator is a convolution local operator with kernel size $K'_1$x$K'_2$, we can wrap the sparse pixels with an extended kernel size $(K_1+K'_1)$x$(K_2+K'_2)$ in the first local operator, and the wrapping process of the next operator is skipped.
+In this case, the cache for the input of the next operator is also needless and can be excluded to save memory consumption and the reduced number of cached input further leverages the cost to update $I'_{inp}$.
 
 
 \subsection{Cache-Aware Scheduling}
