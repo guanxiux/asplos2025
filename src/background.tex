@@ -1,11 +1,46 @@
-\subsection{Robotic Tasks and Visual Models}
+\subsection{Vision tasks on robots}
+Vision tasks play a crucial role in enabling robots to perceive, understand, and interact with their environment. 
+Visual information is essential for various robotic tasks, such as object recognition, navigation, manipulation, and human-robot interaction. 
+The rapid advancements in machine learning, particularly deep learning, have revolutionized the field of computer vision and have been widely adopted in robotic applications, which form the foundation for many high-level robotic tasks.
 
-vision information and fast visual model inference are important for the robotic tasks
+However, the deployment of visual models on resource-constrained robots poses significant challenges. 
+Visual models often require significant computational resources and memory, which may not be readily available on robots, especially in mobile and embedded systems. 
+Furthermore, real-time performance is critical for many robotic tasks, as robots need to process and respond to visual information quickly to ensure safe and effective operation. 
+Therefore, fast visual model inference becomes a key requirement for the successful deployment of deep learning models in robotic applications.
 
-Visual models often use local operators; introduce local operators and non-local operators.
+To address these challenges, various approaches have been proposed to optimize the inference speed of deep learning models on resource-constrained robots. 
+These approaches include model compression techniques, such as pruning and quantization, which aim to reduce the size and computational complexity of visual models while maintaining their performance. 
+Other techniques, such as model distillation and neural architecture search, focus on designing compact and efficient network architectures specifically tailored for robotic applications. 
+These methods achieve faster inference speed through model modifications by potentially sacrificing some accuracy, and the trade-off between model accuracy and inference speed needs to be carefully considered, as sacrificing too much accuracy for the sake of speed may lead to suboptimal performance in critical robotic tasks, which is orthogonal to this paper.
+
+Despite these efforts, the deployment of deep learning models for real-time visual inference on robots remains a challenging task.
+The limited computational resources, power constraints, and the need for low-latency processing pose significant hurdles in achieving fast and reliable visual model inference on robots. 
+This paper presents a new method to optimize inference process based on the cache mechanism.
+
+In summary, vision information and fast visual model inference are crucial for the success of many robotic tasks. 
+The deployment of deep learning models on resource-constrained robots requires careful consideration of inference speed and computational resources. 
+Addressing these challenges is essential for enabling robots to effectively perceive, understand, and interact with their environment in real-time, paving the way for more intelligent and autonomous robotic systems.
+
+\subsection{Visual Models}
+Convolutional layers have become a fundamental building block in visual models (deep learning models for computer vision tasks). 
+These layers are widely used in various vision applications, such as image classification, object detection, and semantic segmentation, due to their ability to effectively capture and learn spatial hierarchies of features from raw input images.
+
+Inspired by the biological structure of the visual cortex, convolutional layers apply learnable filters to the input image, performing convolution operations to produce feature maps that highlight the presence of specific patterns at different spatial locations. 
+This enables deep learning models to capture translation-invariant features, meaning they can detect and recognize visual patterns regardless of their position in the input image.
+
+Convolutional layers also learn hierarchical representations of visual features, with early layers learning low-level features like edges and corners, and deeper layers learning more complex patterns and object parts. This hierarchical learning process allows deep learning models to effectively capture and represent intricate visual patterns in the input data.
+
+The use of convolutional layers has led to significant breakthroughs in various CV tasks, with deep convolutional neural networks (CNNs) achieving state-of-the-art performance in image classification, object detection, and semantic segmentation. 
+As the field of computer vision continues to evolve, convolutional layers are expected to remain a crucial component in the development of advanced models for understanding and analyzing visual data.
+
+Notice that operators for DNN layer (e.g., convolution, ReLU, softmax) can be categorized into two types: local operators and global operators, depending on whether they can be computed independently with partial input according to \cite{sun2024hybridparallel}, and the convolutional layer is a typical local operator, as it can be computed with partial input tensor (the blocks in the input tensor for convolution).
 
 \subsection{Resource Limitations of Robots}
-Computation power; wireless network
+In real-world robotic Internet of Things (IoT) scenarios, devices often navigate and move around to perform tasks such as search and exploration. While wireless networks provide high mobility, they also have limited bandwidth, which can significantly impact the performance of robotic IoT systems.
+
+wireless transmission of robots is constrained by limited bandwidth, both due to the theoretical upper limit of wireless transmission technologies and the practical instability of wireless networks. 
+The most advanced Wi-Fi technology, Wi-Fi 6, offers a maximum theoretical bandwidth of 1.2 Gbps for a single stream \cite{liu2023first}. However, the limited hardware resources on robots often prevent them from fully utilizing the potential of Wi-Fi 6\cite{yang2022mobile}. Moreover, the actual available bandwidth of wireless networks is often reduced in practice due to various factors, such as the movement of devices~\cite{masiukiewicz2019throughput, pei2013connectivity}, occlusion by physical barriers~\cite{ding2015performance, sarkar2013effect}, and preemption of the wireless channel by other devices~\cite{adame2021time, ren2018proportional}, which demonstrate the instability of wireless transmission in \cite{sun2024hybridparallel}.
+This limitation on the bandwidth of robots' wireless network poses significant challenges for the efficient and reliable operation of robots in real-world scenarios, particularly in outdoor environments where the instability of wireless networks is more pronounced.
 
 \subsection{Related Work}
 offloading methods; intra-DP
