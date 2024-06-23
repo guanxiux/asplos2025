@@ -70,12 +70,47 @@ For $(u,v)\in\textit{\textbf{uv}}'$
     f_{out}^{i,j,u,v} = \sum_{c=1}^{C_1} \sum_{m=1}^{K_1} \sum_{n=1}^{K_2} K^{j,c,m,n}\cdot F(i,c,k+m-1,l+n-1, I'_{inp}, f_{inp})
 \end{equation}
 Until now we get the indices of the altered output values in output feature map $\textit{\textbf{uv}}'$ and the corresponding features $f_{out}$ which can then be passed to the subsequent computation.
+
 Along the local operators where local geometries are preserved, we can repeat the above process by passing only the sparse features and their indices and do not need to merge the sparse features with cache.
 When a non-local operator is met (e.g., matrix multiplication), we transform its cached input with $M$ and merge $f_{inp}$ into the transformed input according to their sparse indices $\textit{\textbf{uv}}$, which recovers the correct geometries of the whole feature map.
 
 Also, to save memory consumption of cached intermediates, notice that the above process is basically wrapping the sparse pixels with the kernel size $K_1$x$K_2$ and computing on the wrapped pixels, we can merge the query process in Equation~\ref{eq:query} of multiple convolution local operators into the first convolution local operator.
-For example, if a next operator is a convolution local operator with kernel size $K'_1$x$K'_2$, we can wrap the sparse pixels with an extended kernel size $(K_1+K'_1)$x$(K_2+K'_2)$ in the first local operator, and the wrapping process of the next operator is skipped.
-In this case, the cache for the input of the next operator is also needless and can be excluded to save memory consumption and the reduced number of cached input further leverages the cost to update $I'_{inp}$.
+For example, if a next operator is a convolution local operator with kernel size $K'_1$x$K'_2$, we can wrap the sparse pixels with an extended kernel size $(K_1+K'_1)$x$(K_2+K'_2)$ in the first local operator, and the wrapping process of the next operator is skipped (we refer to this process as merging cache).
+In this case, the cache for the input of the next operator is needless and can be excluded to save memory consumption and the reduced number of cached input further leverages the cost to update $I'_{inp}$.
 
 
 \subsection{Cache-Aware Scheduling}
+In the above discussion we have analyzed the opportunity for visual model inference acceleration by reusing previous computation result.
+In a edge-cloud collaborative system as CacheInf, reusing previous computation result has the potential to not only reduce transmission time by reducing transmission data volume, but also reduce local computation time by shrinking computation size using sparse local operators, and the extend of such reduction is determined by cache ratio of the current input $r$.
+Similar to Hybrid-Parallel~\cite{sun2024hybridparallel}, we define all the operators involved in a visual model as $\textit{\textbf{O}} = \{o_1, o_2,...,o_n\}$ and the portion of locally executed input of each operator will be $\textit{\textbf{X}}=\{x_1, x_2, ..., x_n\}$, $0\le x_i \ge 1$ and $1-x_i$ represents the the portion of input executed on the GPU server.
+The indices of local operators is defined as $\textit{\textbf{O}}_l$.
+
+In CacheInf, while offloading, we transmit the sparse features together with their indices encoded into a bit-mask and the transmission data volume is almost inversely proportional to cache ratio: assume wholely offloading computation of a visual model from a layer will require transmission of $m=B$x$C$x$H$x$W$ element and each element is a float32 number, summing up to 4m bytes data; in the cached case with cache ratio $r$, the data volume needed to transmit will be $(1-r)4m + \frac{m}{8BxC}$ bytes, where the latter term is the bit-mask of $H$x$W$ encoding the indices of the transmitted pixels on the whole feature map.
+When integrating Hybrid-Parallel that would slice the sparse features, we simply slice the sparse features and only encode the bit-mask for indices of the slice for server, while preserving the features and indices for robot.
+
+However, the local computation time acceleration with sparse local operators has a complex relationship with cache ratio, which is affected by the operator implementation, gpu structure, input shapes and so on.
+Thus we profile such relationship by altering the cache ratio and $x_i$ and recording the average execution time for every operator involved in the visual model and we define the profile result as a function $T(o_i, x_i, r)$ which returns the execution time of operator $o_i$ under $x_i$ with cache ratio $r$.
+We also profile the time cost to update cached input for each local operator and get $U(o_i, x_i, r)$.
+Note that for non-local operators $\{o_i|1\le i\le n \land i \notin \textit{\textbf{O}}_l\}$, we constraint that both $T(\cdot)$ and $U(\cdot)$ returns time of $x_i$ to be either 0 or 1 and $r$ to be 0.
+
+\subsubsection{Schedule to Merge Cache}
+With the above setup, the first problem to solve will be the choices of merging the cache of sparse local operators to further accelerate computation while saving memory consumption.
+We define the indices of the chosen operators to cache their input as $\textit{\textbf{O}}_c$ and the resulting reduction of cache ratio (since extra input will be included) of each operator as $o_I$ to be $R(\textit{\textbf{O}}_c, o_i)$.
+Since these choices will determine the operators that will cache their input and will be reused across different inference, these choices should be fixed during the whole inference task.
+Thus we start by considering only the worst case where offloading is not possible and $\forall x_i\in \textit{\textbf{X}}, x_i=1$.
+In this case the execution time of every operator will be $T(o_i, 1, r-R(\textit{\textbf{O}}_c, o_i))$, and the optimization problem will be 
+\begin{equation}
+    \min\limits_{\textit{\textbf{O}}_c \subset \textit{\textbf{O}}_l} \frac{1}{w} \sum_{i=1}^n \sum_{j=0}^w T(o_i, 1, r_j+R(\textit{\textbf{O}}_c, o_i)) + U_{sum}(\textit{\textbf{O}}_c, r_j)
+    \label{eq:cached op}
+\end{equation}
+where $r_j = \frac{j}{w}$ with $w>1$ is the profile possible cache ratio considered, and $U_{sum}(\textit{\textbf{O}}_c, r) = \sum\limits_{k \in \textit{\textbf{O}}_c} U(o_k, x_k, r)$ is the total time to update cache of operators in $\textit{\textbf{O}}_c$.
+We empirically set $w$ to be 10.
+
+Solving of this optimization problem seeks the choices of $\textit{\textbf{O}}_c$ that minimizes local execution time averaged across all possible cache ratio.
+Note that we do not need to explicitly consider memory consumption because the latter term in Equation~\ref{eq:cached op} will naturally reduce the number of cached operators and favor operators with smaller size of input and thus shorter time to update cache.
+
+\subsubsection{Schedule of Offloading}
+
+TODO:
+describe factors of each operators: x, cache status (no cache, merged, gather input, full input)
+input factor: bandwidth, cached ratio 
