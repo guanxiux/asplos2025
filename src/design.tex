@@ -1,6 +1,6 @@
 This chapter presents the detailed design for CacheInf to fulfill the functionality of tracking and reusing cached computation results and scheduling for actions among local computation, offloading or hybrid, with or without cache, to optimally reduce visual model inference latency for mobile robots.
 
-\subsection{Identifying Reusable Computation Results}
+\subsection{Identifying Reusable Computation Results\label{sec:reusable cache}}
 To find and match similar local geometries between consecutive images in a stream of images $\textit{\textbf{I}}=\{I_1, I_2, ..., I_n\}$ to identify reusable cache, we use the standard image stitching procedure: given a pair of consecutive images $I_j$ and $I_{j+1}$, their key points and key point descriptors (or feature vectors) are computed and matched within a distance threshold of the feature vectors; then a homography matrix $M$ is computed based on the corresponding relationship between the key points on each image which minimizes the error.
 The resulting homography matrix is then used to apply perspective transformation to each pixel in $I_j$ to form a new image $\hat{I}_{j+1}$ closest to $I_{j+1}$ as shown in Equation~\ref{eq: pt}, where $(u_j,v_j)$ and $(\hat{u}_{j+1},\hat{v}_{j+1})$ and pixel indices on $I_j$ and $\hat{I}_{j+1}$.
 It is also depicted in the Feature Based Transformed Image in Fig.~\ref{fig:overview}.
@@ -108,7 +108,7 @@ where $r_j = \frac{j}{w}$ with $w>1$ is the possible cache ratio considered (we 
 Solving of this optimization problem seeks the optimal choices of cache operators $\hat{\textit{\textbf{O}}}_c$ that minimizes local execution time averaged across all possible cache ratio.
 Note that we do not need to explicitly consider memory consumption because the latter term in Equation~\ref{eq:cached op} will naturally reduce the number of cached operators and favor operators with smaller size of input and thus shorter time to update cache.
 
-\subsubsection{Schedule of Offloading}
+\subsubsection{Schedule of Offloading\label{sec:schedule}}
 Finally, we are combining all the above components to schedule for computation and offloading in a cache-aware way to optimize end-to-end inference latency for robotic visual models.
 With Hybrid-Parallel integrated, cache can exists partially both at the robot and the server and we analyze the cache ratio on robot $r_c$ and the cache ratio $r_s$ on server by enquiry the current cached pixels with the previous slice of input (i.e., $x_i$).
 For an $x_i$, we define the minimum portion of locally executed input of its parent operators (i.e., operators whose output is the input of $o_i$) as $x'_i$ and different between $x_i$ indicates offloading to/from the server.
@@ -155,7 +155,9 @@ With the above statements, optimizing the end-to-end inference latency for the v
 In Equation~\ref{eq:e2e}, the first two constraints ensure that inference output will finally be located at the robot and non-local operators will always have full input; the third constraint ensures that offloading will not happen within an operator whose cached is merged into the cache of other operators, since we cannot recover the operator's whole feature map.
 We solve both optimization problems in Equation~\ref{eq:cached op} and~\ref{eq:e2e} with the differential evolution algorithm~\cite{qin2008differential} and store the solutions of different bandwidth and cache ratios of Equation~\ref{eq:e2e} in a dictionary referred to as $Schedule$.
 
-The resulting algorithms of CacheInf at both the robot and the server are presented in Algorithm~\ref{alg:client} and Algorithm~\ref{alg:server}
+The resulting algorithms of CacheInf at both the robot and the server are presented in Algorithm~\ref{alg:client} and Algorithm~\ref{alg:server}.
+Line 1 to 3 in Algorithm~\ref{alg:client} and Line 1 to 4 in Algorithm~\ref{alg:server} profile the model at both the robot and the server and compute a schedule as described in Section~\ref{sec:schedule}, where the computation is located on the server to speed up computation.
+The rest of Algorithm~\ref{alg:server} is basically mirrored from that of Algorithm~\ref{alg:client} and thus we focus on Algorithm~\ref{alg:client} for simplicity.
 
 \begin{algorithm}[htbp]
     \caption{\small CacheInfClient\label{alg:client}}
@@ -182,15 +184,22 @@ The resulting algorithms of CacheInf at both the robot and the server are presen
 
             $r_c, r_s = AnalyzeCacheRatio(I, Cache[1])$
 
-            $x, x' = Schedule[b,r_c,r_s]$
-
             $inp, M = IdentifyCache(I, Cache[1])$
 
             $ Send(b, r_c, r_s, M) $
 
+            $x, x' = Schedule[b,r_c,r_s]$
+
             \ForEach{$i = 1, 2, ..., n $ \enspace}{
-                \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i>0$}{
+                \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i>0$ and IsSparse(inp)}{
                     $inp = DenseRecover(inp, Cache[i],M)$
+
+                    $UpdateCache(Cache[i], inp, M)$
+                }
+                \ElseIf{$x'_i>0$ and $i\in \hat{\textit{\textbf{O}}}_c$}{
+                    $inp = SparseGather(inp, Cache[i], M)$
+    
+                    $UpdateCache(Cache[i], inp, M)$
                 }
                 \If{$x_i < x'_i$}{
                     $inp, inp' = Slice(inp, x_i, x'_i)$
@@ -200,15 +209,13 @@ The resulting algorithms of CacheInf at both the robot and the server are presen
                 \ElseIf{$x_i > x'_i$}{
                     $inp = Merge(inp, Receive())$
                 }
-
                 \If{$x_i>0$}{
-
-                    \If{$i\in \hat{\textit{\textbf{O}}}_c$}{
-                        $inp = SparseGather(inp, Cache[i], M)$
-
-                        $UpdateCache(Cache[i], inp, M)$
+                    \If{$IsSparse(inp)$}{
+                        $inp = SparseExecute(o_i, inp)$ 
                     }
-                    $inp = Execute(o_i, inp)$ 
+                    \Else{
+                        $inp = Execute(o_i, inp)$
+                    }
                 }
 
             }
@@ -217,6 +224,14 @@ The resulting algorithms of CacheInf at both the robot and the server are presen
       
 \KwRet{$ret$}
 \end{algorithm}
+
+
+Line 6 to 8 in Algorithm~\ref{alg:client} identifies the reusable cache by matching features between the input image $I$ and its cached counterpart $Cache[1]$ and gets the homography matrix $M$ and the sparse uncached input that needs to be recomputed.
+After communicating info of bandwidth, cache ratio and homography matrix with the server, we query the $Schedule$ to get input ratio $x$ and parent operator input ratio $x'$ as described in Section~\ref{sec:schedule}.
+The we start executing each operator $o_i$ involved in the model sequentially.
+We recover the whole input by combining sparse input $inp$ with cache for non-local operators or gather extra pixels from cache for $inp$ for sparse local operator computation at cached operators at line 12 to 19.
+When offloading is required to accelerate inference, we send a slice of $inp$ to the server or merge received partial input from the server to $inp$ at line 20 to 26.
+When $inp$ is finally ready and not empty, we execute the operator $o_i$ with inp where we choose the sparse local operator for sparse input and choose the original operator for dense input at line 27 to 34.
 
 
 \begin{algorithm}[htbp]
@@ -247,8 +262,15 @@ The resulting algorithms of CacheInf at both the robot and the server are presen
             $x, x' = Schedule[b,r_c,r_s]$
 
             \ForEach{$i = 1, 2, ..., n $ \enspace}{
-                \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i<1$}{
+                \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i<1$ and IsSparse(inp)}{
                     $inp = DenseRecover(inp, Cache[i],M)$
+
+                    $UpdateCache(Cache[i], inp, M)$
+                }
+                \ElseIf{$x'_i<1$ and $i\in \hat{\textit{\textbf{O}}}_c$}{
+                    $inp = SparseGather(inp, Cache[i], M)$
+
+                    $UpdateCache(Cache[i], inp, M)$
                 }
                 \If{$x_i > x'_i$}{
                     $inp, inp' = Slice(inp, x_i, x'_i)$
@@ -260,13 +282,10 @@ The resulting algorithms of CacheInf at both the robot and the server are presen
                 }
 
                 \If{$x_i < 1$}{
-
-                    \If{$i\in \hat{\textit{\textbf{O}}}_c$}{
-                        $inp = SparseGather(inp, Cache[i], M)$
-
-                        $UpdateCache(Cache[i], inp, M)$
+                    \If{$IsSparse(inp)$}{
+                        $inp = SparseExecute(o_i, inp)$ 
                     }
-                    $inp = Execute(o_i, inp)$ 
+                    \Else{$inp = Execute(o_i, inp)$ }
                 }
 
             }
