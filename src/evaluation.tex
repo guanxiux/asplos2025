@@ -1,48 +1,55 @@
 \subsection{Evaluation Settings}
-\myparagraph{Testbed}
 
 \begin{figure}[!t]
     \centering
-    \subfloat[Four-wheeled robot]{\includegraphics[width=0.48\linewidth]{fig/robot.png}}
+    \subfloat[Four-wheeled robot]{\includegraphics[width=0.48\linewidth]{fig/robot.png}\label{fig:robot}}
     \hfil
-    \subfloat[Air-ground robot]{\includegraphics[width=0.48\linewidth]{fig/agr_robot.png}}
+    \subfloat[Air-ground robot]{\includegraphics[width=0.48\linewidth]{fig/agr_robot.png}\label{fig:agr}}
     \caption{The composition of the four-wheeled robot and the air-ground robot used in our evaluation.}
-    \label{fig:robot}
+    % \label{fig:robot}
 \end{figure}
 
-The evaluation was conducted on a custom four-wheeled robot (Fig~\ref{fig:robot}), and a custom air-ground robot(Fig~\ref{fig:agr}).
-They are equipped with a Jetson Xavier NX~\cite{jetsonnx} 8G onboard computer that is capable of AI model inference with local computation resources. 
-The system runs Ubuntu 20.04 with ROS Noetic and a dual-band USB network card (MediaTek MT76x2U) for wireless connectivity. 
-The Jetson Xavier NX interfaces with a Leishen N10P LiDAR, ORBBEC Astra depth camera, and an STM32F407VET6 controller via USB serial ports. 
-Both LiDAR and depth cameras facilitate environmental perception, enabling autonomous navigation, obstacle avoidance, and SLAM mapping. 
-The GPU server is a PC equipped with an Intel(R) i5 12400f CPU @ 4.40GHz and an NVIDIA GeForce GTX 2080 Ti 11GB GPU, connected to our robot via Wi-Fi 6 over 80MHz channel at 5GHz frequency in our experiments.
+\myparagraph{Testbed}
+We conducted experiments on a four-wheeled robot (Fig~\ref{fig:robot}) and a air-ground robot(Fig~\ref{fig:agr}).
+Both robots are equipped with a Jetson Xavier NX~\cite{jetsonnx} 8G onboard computer with cuda acceleration capability and a MediaTek MT76x2U USB wireless network interface card for wireless connectivity.
+The Jetson Xavier NX is connected to a Leishen N10P LiDAR, an ORBBEC Astra depth camera and an STM32F407VET6 controller via USB serial ports, which are managed and driven using ROS Noetic. 
+The GPU server used in our experiments is equipped with an Intel(R) i5 12400f CPU @ 4.40GHz and an NVIDIA GeForce GTX 2080 Ti 11GB GPU, connected to our robot via Wi-Fi 6 over 80MHz channel at 5GHz frequency.
 
-Tab.~\ref{tab:energydefault} presents the overall on-board energy consumption (excluding motor energy consumption for robot movement) of the robot in various states: inference (model inference with full GPU utilization, including CPU and GPU energy consumption), transmission (communication with the GPU server, including wireless network card energy consumption), and standby (robot has no tasks to execute).
-Notice that different models, due to varying numbers of parameters, exhibit distinct GPU utilization rates and power consumption during inference. 
+% Tab.~\ref{tab:energydefault} presents the overall on-board energy consumption (excluding motor energy consumption for robot movement) of the robot in various states: inference (model inference with full GPU utilization, including CPU and GPU energy consumption), transmission (communication with the GPU server, including wireless network card energy consumption), and standby (robot has no tasks to execute).
+% Notice that different models, due to varying numbers of parameters, exhibit distinct GPU utilization rates and power consumption during inference. 
 
-\begin{table}[!t]
-    \centering
-    \begin{tabular}{|c|c|c|c|}
-    \hline
-            & inference & transmission & standby \\ \hline
-    Power (W) &     13.35        &       4.25        &    4.04   \\ \hline
-    \end{tabular}
-    \caption{Power consumption (Watt) of our robot in different states.}
-    \label{tab:energydefault}
-    \end{table}
+% \begin{table}[!t]
+%     \centering
+%     \begin{tabular}{|c|c|c|c|}
+%     \hline
+%             & inference & transmission & standby \\ \hline
+%     Power (W) &     13.35        &       4.25        &    4.04   \\ \hline
+%     \end{tabular}
+%     \caption{Power consumption (Watt) of our robot in different states.}
+%     \label{tab:energydefault}
+%     \end{table}
 
 \myparagraph{Workload}
-We evaluated two typical real-world robotic applications on our testbed: Kapao, a real-time people-tracking application on our four-wheeled robot (Fig~\ref{fig:kapao}), and AGRNav, an autonomous navigation application on our air-ground robot (Fig~\ref{fig:agrnav}). 
-These applications feature different model input and output size patterns: Kapao takes RGB images as input and outputs key points of small data volume. In contrast, AGRNav takes point clouds as input and outputs predicted point clouds and semantics of similar data volume as input, implying that AGRNav needs to transmit more data during distributed inference. 
-And we have verified several models common to mobile devices on a larger scale to further corroborate our observations and findings: DenseNet~\cite{huang2018densely}, VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet}.
-% The models' running statistics are listed in Tab.~\ref{tab:all_app}.  
+We chose two real-world visual robotic applications as our major workloads: 1. Kapao~\cite{kapao} depicted in Figure~\ref{fig:kapao}, a RGB-image-based real-time people key point detection applications used to guide our four-wheeled robot to track and follow a walking people;
+2. AGRNav~\cite{agrnav} depicted in Figure~\ref{fig:agr}, an autonomous air-ground robot navigation application that predicts unobserved obstacles by semantic prediction on point clouds and optimizes the navigation trajectory for the air-ground robot.
+% We evaluated two typical real-world robotic applications on our testbed: Kapao, a real-time people-tracking application on our four-wheeled robot (Fig~\ref{fig:kapao}), and AGRNav, an autonomous navigation application on our air-ground robot (Fig~\ref{fig:agrnav}). 
+% These applications feature different model input and output size patterns: Kapao takes RGB images as input and outputs key points of small data volume. In contrast, AGRNav takes point clouds as input and outputs predicted point clouds and semantics of similar data volume as input, implying that AGRNav needs to transmit more data during distributed inference. 
+We also verified CacheInf's performance on a broader range of visual models common to mobile devices: DenseNet~\cite{huang2018densely}, VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet}, and we used their default implementation of torchvision~\cite{noauthor_torchvision_nodate}. 
+% And we have verified several models common to mobile devices on a larger scale to further corroborate our observations and findings: DenseNet~\cite{huang2018densely}, VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet}.
+% The models' running statistics are listed in Tab.~\ref{tab:all_app}.
+
+\myparagraph{Dataset}
+For AGRNav we used the officially available sequence of point clouds input~\cite{agrnav} and for Kapao, we used the Collective Activity Dataset (CAD)~\cite{Choi_VSWS_2009} which are sequences of video images of people doing different activities captured using hand-held cameras.
+For the rest of the models from torchvision, we used the DAVIS~\cite{Perazzi2016} dataset which are sequences of video images of different objectives captured also using hand-held cameras.
 
 \myparagraph{Experiment Environments}
-We evaluated two real-world environments: indoors (robots move in our laboratory with desks and separators interfering with wireless signals) and outdoors (robots move in our campus garden with trees and bushes interfering with wireless signals, resulting in lower bandwidth). 
-The corresponding bandwidths between the robot and the GPU server in indoors and outdoors scenarios are shown in Fig.~\ref{fig:bandwidth}.
+The experiments across all systems and all workloads were conducted in two different real-world environments: 1. indoors, where the robot was moving in our office with desks and separators interfering wireless bandwidth;
+2. outdoors, where the robot was moving in a garden with trees and bushes interfering with wireless signals and less reflection, resulting in lower bandwidth. 
+The bandwidth fluctuation of each of the environments are shown in Fig.~\ref{fig:bandwidth}.
+% We evaluated two real-world environments: indoors (robots move in our laboratory with desks and separators interfering with wireless signals) and outdoors (robots move in our campus garden with trees and bushes interfering with wireless signals, resulting in lower bandwidth). 
 
 \myparagraph{Baselines}
-We selected two SOTA inference acceleration methods as baselines: DSCCS ~\cite{liang2023dnn}, aimed at accelerating inference, and Hybrid-Parallel ~\cite{sun2024hybridparallel} (referred to as HP), that parallelizes local computation and offloading to further acceleratio inference. 
+We selected two SOTA inference acceleration methods as baselines: DSCCS ~\cite{liang2023dnn}, which searches for optimal layer partition strategy of a visual model to offload layers to the GPU server to accelerate inference, and Hybrid-Parallel ~\cite{sun2024hybridparallel} (referred to as HP), which enables parallelization of local computation and offloading by also partitioning the layer input / output of local operators besides layer partitioning to further accelerate inference. 
 We also combined DSCCS with our cache mechanism (referred to as DSCCS-C) to present another perspective about CacheInf's performance gain.
 
 The evaluation questions are as follows:
@@ -77,25 +84,23 @@ The evaluation questions are as follows:
 \myparagraph{Inference Time}
 \begin{table*}[htb]
     \centering
-
 \begin{tabular}{ccc|c|c|c|c|c|c}
 \toprule
 Model(number & Local compu- & \multirow[c]{2}{*}{System} & \multicolumn{2}{|c|}{Transmission time/s} & \multicolumn{2}{|c|}{Inference time/s} & \multicolumn{2}{c}{Percentage(\%)} \\
 of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & indoors & outdoors \\
 \midrule
-\multirow[c]{4}{*}{kapao(77M)} & \multirow[c]{4}{*}{1.01($\pm$0.03)} & DSCCS & 0.21($\pm$0.1) & 0.24($\pm$0.12) & 0.36($\pm$0.2) & 0.40($\pm$0.17) & 58.33 & 60.21 \\
+\multirow[c]{4}{*}{Kapao(77M)} & \multirow[c]{4}{*}{1.01($\pm$0.03)} & DSCCS & 0.21($\pm$0.1) & 0.24($\pm$0.12) & 0.36($\pm$0.2) & 0.40($\pm$0.17) & 58.33 & 60.21 \\
  &  & DSCCS-C & 0.18($\pm$0.14) & 0.22($\pm$0.12) & 0.33($\pm$0.25) & 0.37($\pm$0.18) & 66.67 & 67.57 \\
  &  & Hybrid-Parallel & 0.24($\pm$0.15) & 0.28($\pm$0.13) & 0.31($\pm$0.14) & 0.34($\pm$0.12) & 77.42 & 82.35 \\
  &  & CacheInf & 0.16($\pm$0.13) & 0.21($\pm$0.18) & 0.20($\pm$0.16) & 0.24($\pm$0.20) & 80.09 & 87.56 \\
 \cline{1-9} \cline{2-9}
-\multirow[c]{4}{*}{agrnav(0.84M)} & \multirow[c]{4}{*}{0.60($\pm$0.04)} & DSCCS & 0.10($\pm$0.05) & 0.15($\pm$0.05) & 0.41($\pm$0.11) & 0.47($\pm$0.12) & 24.39 & 31.91\\
+\multirow[c]{4}{*}{AGRNav(0.84M)} & \multirow[c]{4}{*}{0.60($\pm$0.04)} & DSCCS & 0.10($\pm$0.05) & 0.15($\pm$0.05) & 0.41($\pm$0.11) & 0.47($\pm$0.12) & 24.39 & 31.91\\
  &  & DSCCS-C & 0.13($\pm$0.07) & 0.16($\pm$0.06) & 0.38($\pm$0.10) & 0.43($\pm$0.13) & 34.21 & 37.21\\
  &  & Hybrid-Parallel & 0.24($\pm$0.08) & 0.26($\pm$0.07) & 0.30($\pm$0.09) & 0.33($\pm$0.07) & 78.65 & 79.47 \\
  &  & CacheInf & 0.18($\pm$0.08) & 0.20($\pm$0.08) & 0.21($\pm$0.16) & 0.25($\pm$0.18) & 86.71 & 80.01 \\
 \cline{1-9} \cline{2-9}
 \bottomrule
 \end{tabular}
-
 
     \caption{Average transmission time, inference time, percentage that transmission time accounts for of the total inference time and their standard deviation ($\pm n$) of Kapao and AGRNav in different environments with different systems. ``Local computation'' refers to inference the entire model locally on the robot.}
     \label{tab:e2e_time}
@@ -110,13 +115,13 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
  of parameters)&  & indoors & outdoors & indoors & outdoors \\
 \midrule
 \midrule
-\multirow[c]{5}{*}{kapao(77M)} & Local & 10.61($\pm$0.49) & 10.61($\pm$0.49) & 9.79($\pm$0.03) & 9.79($\pm$0.03) \\
+\multirow[c]{5}{*}{Kapao(77M)} & Local & 10.61($\pm$0.49) & 10.61($\pm$0.49) & 9.79($\pm$0.03) & 9.79($\pm$0.03) \\
  & DSCCS & 6.38($\pm$2.21) & 6.63($\pm$2.38) & 2.30($\pm$0.55) & 2.65($\pm$0.55) \\
  & DSCCS-C & 6.30($\pm$2.15) & 6.53($\pm$2.12) & 2.08($\pm$0.50) & 2.42($\pm$0.53) \\
  & HP & 7.05($\pm$1.63) & 6.94($\pm$0.98) & 2.19($\pm$0.62) & 2.35($\pm$0.42) \\
  & CacheInf & 7.53($\pm$1.62) & 7.30($\pm$0.96) & 1.51($\pm$0.60) & 2.75($\pm$0.41) \\
 \cline{1-6}
-\multirow[c]{5}{*}{agrnav(0.84M)} & Local & 8.11($\pm$0.25) & 8.11($\pm$0.25) & 4.86($\pm$0.01) & 4.86($\pm$0.01) \\
+\multirow[c]{5}{*}{AGRNav(0.84M)} & Local & 8.11($\pm$0.25) & 8.11($\pm$0.25) & 4.86($\pm$0.01) & 4.86($\pm$0.01) \\
  & DSCCS & 6.21($\pm$1.50) & 7.29($\pm$1.55) & 2.55($\pm$0.19) & 3.43($\pm$0.18) \\
  & DSCCS-C & 6.17($\pm$1.56) & 7.00($\pm$1.43) & 2.34($\pm$0.20) & 3.01($\pm$0.20) \\
  & HP & 7.52($\pm$0.51) & 8.04($\pm$0.45) & 2.26($\pm$0.15) & 2.63($\pm$0.15) \\
@@ -129,6 +134,23 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
     \label{tab:e2e_power}
 \end{table*}
 
+\begin{table}[htb]
+\centering
+\begin{tabular}{c|c|c|c}
+\toprule
+Model(number & \multicolumn{3}{|c}{Memory Consumption(MB)} \\
+ of parameters) & No Cache & Cache All & CacheInf \\
+\midrule
+Kapao(77M) & 300.6 & 1782.5 & 494.7\\
+\hline
+AGRNav(0.84M) & 82.8 & 713.3 & 131.2\\
+\bottomrule
+\end{tabular}
+
+    \caption{Peak GPU memory consumption of different caching strategy on Kapao and AGRNav. }
+    \label{tab:e2e_mem}
+\end{table}
+
 \subsection{Performance on Various Common Models}
 
 \begin{table*}[htb]
@@ -139,7 +161,7 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
  Model(number&  Local compu- & \multirow[c]{2}{*}{System} & \multicolumn{2}{|c|}{Transmission time/ms} & \multicolumn{2}{|c|}{Inference time/ms} & \multicolumn{2}{c}{Percentage(\%)} \\
  of parameters) & taion time/ms &  & indoors & outdoors & indoors & outdoors & indoors & outdoors \\
 \midrule
-\multirow[c]{4}{*}{DenseNet121(7M)} & \multirow[c]{4}{*}{74.5($\pm$18.7)} & DSCCS & 16.2($\pm$40.9) & 20.8($\pm$51.9) & 81.4($\pm$27.2) & 86.6($\pm$27.7) & 19.95 & 24.07 \\
+\multirow[c]{4}{*}{DenseNet(7M)} & \multirow[c]{4}{*}{74.5($\pm$18.7)} & DSCCS & 16.2($\pm$40.9) & 20.8($\pm$51.9) & 81.4($\pm$27.2) & 86.6($\pm$27.7) & 19.95 & 24.07 \\
  &  & DSCCS-C & 20.4($\pm$43.5) & 25.8($\pm$56.9) & 85.5($\pm$27.9) & 89.6($\pm$29.3) & 23.86 & 28.80 \\
  &  & HP & 53.4($\pm$34.5) & 52.9($\pm$23.9) & 74.5($\pm$85.7) & 55.1($\pm$15.6) & 71.70 & 96.05 \\
  &  & CacheInf & 56.3($\pm$37.5) & 57.5($\pm$43.5) & 76.3($\pm$90.6) & 78.1($\pm$33.6) & 73.79 & 73.62 \\
@@ -166,9 +188,7 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
 \cline{1-9} \cline{2-9}
 \bottomrule
 \end{tabular}
-
-
-    \caption{Average transmission time, inference time, percentage that transmission time accounts for of the total inference time and their standard deviation ($\pm n$) of common AI models in different environments with different systems. }
+    \caption{Average transmission time, inference time, percentage that transmission time accounts for of the total inference time and their standard deviation ($\pm n$) of common visual models in different environments with different systems. }
     \label{tab:torchvision_time}
 \end{table*}
 
@@ -180,7 +200,7 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
 Model(number & \multirow[c]{2}{*}{System} & \multicolumn{2}{|c|}{Power consumption(W)} & \multicolumn{2}{|c}{Energy consumption(J) per inference} \\
 of parameters)&  & indoors & outdoors & indoors & outdoors \\
 \midrule
-\multirow[c]{5}{*}{DenseNet121(7M)} & Local & 8.2($\pm$0.27) & 8.2($\pm$0.27) & 0.46($\pm$0.04) & 0.46($\pm$0.04) \\
+\multirow[c]{5}{*}{DenseNet(7M)} & Local & 8.2($\pm$0.27) & 8.2($\pm$0.27) & 0.46($\pm$0.04) & 0.46($\pm$0.04) \\
  & DSCCS & 6.91($\pm$0.45) & 6.86($\pm$0.46) & 0.56($\pm$0.04) & 0.59($\pm$0.04) \\
  & DSCCS-C & 7.01($\pm$0.43) & 6.96($\pm$0.43) & 0.60($\pm$0.07) & 0.52($\pm$0.06) \\
  & HP & 5.36($\pm$0.79) & 5.79($\pm$0.24) & 0.4($\pm$0.06) & 0.32($\pm$0.01) \\
@@ -212,9 +232,32 @@ of parameters)&  & indoors & outdoors & indoors & outdoors \\
 \cline{1-6}
 \bottomrule
 \end{tabular}
-    \caption{The power consumption against time (Watt) and energy consumption per inference (Joule) with standard deviation ($\pm n$) of common AI models in different environments with different systems. ``Local'' represents ``Local computation''.}
+    \caption{The power consumption against time (Watt) and energy consumption per inference (Joule) with standard deviation ($\pm n$) of common visual models in different environments with different systems. ``Local'' represents ``Local computation''.}
     \label{tab:torchvision_power}
 \end{table*}
+
+\begin{table}[htb]
+    \centering
+    \begin{tabular}{c|c|c|c}
+    \toprule
+    Model(number & \multicolumn{3}{|c}{Memory Consumption(MB)} \\
+     of parameters) & No Cache & Cache All & CacheInf \\
+    \midrule
+    DenseNet(7M) & 30.8 & 159.7 & 53.2\\
+    \hline
+    RegNet(54M) & 207.5 & 427.7 & 258.9\\
+    \hline
+    ConvNeXt(88M) & 337.9 & 603.9 & 369.9\\
+    \hline
+    VGG19(143M) & 548.1 & 668.7 & 582.8\\
+    \hline
+    ConvNeXt(197M) & 765.4 & 1152.7 & 789.8 \\
+    \bottomrule
+    \end{tabular}
+    
+        \caption{Peak GPU memory consumption of different caching strategy on common visual models. }
+        \label{tab:torchvision_mem}
+\end{table}
 
 \subsection{Micro-Event}
 \begin{figure}[htb]
