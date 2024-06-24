@@ -30,19 +30,20 @@ based on the portion of overlapping area (reusable cache) and the current estima
 
 The design of CacheInf is non-trivial.
 The first challenge is to transform cached results to local computation acceleration.
-While the computation result of cached areas can be reused, the sparse and fragmented remaining un-cached area can not be computed on the highly optimized local operators for dense local geometries, hindering acceleration .
-To make use of these highly optimized local operators, in CacheInf we search for a minimal set of rectangles that covers the uncached areas and recombine them to a new dense rectangle while preserving local geometries.
-Computation results on the new rectangle can then be broken up and combined with the cache to form the correct result.
+While the computation of cached areas can be skipped, the remaining uncached areas need computing but can not be computed on the highly optimized local operators for dense local geometries (e.g., conv2d in pytorch~\cite{paszke2017automatic}), since these areas are typically sparse and fragmented, hindering acceleration.
+We designed and implemented sparse local operators based on the optimized sparse spatial data structure provided by taichi~\cite{taichi}, which achieved comparable performance with the default local operators for dense local geometries in pytorch~\cite{paszke2017automatic}.
+The computation results on sparse uncached areas can then be combined with the cache to form the correct result of the global geometry.
 
 The second challenge is how to reduce the cache memory consumption, especially at the robot side which typically has a tight GPU memory budget.
 In visual models, the computation results of local operators typically consumes significantly more memory than the parameters of local operators and naively caching all the computation results leads to heavy GPU memory burden.
 
 We observe that in visual models, the computation result of a local operator often serves as the input of another local operator. 
-In this case, the computation result of the combined rectangle of uncached areas can be directly passed to the following local operators without loss of information, and cache between these two operators can be ignored to reduce memory consumption.
-We greedily search for a continuous sequence of local operators whose starting and ending operators incur the least memory consumption and cache the computation results of the starting and ending operators only, so as to minimize cache memory consumption.
+In this case, the computation result of the sparse uncached areas of a local operator can be passed to the following local operators without loss of information, and cache between these two operators can be ignored (or merged to the first operator) to reduce memory consumption.
+We search for opposite to merge cache for each operator and balance between sparse computation acceleration and GPU memory consumption.
+% We greedily search for a continuous sequence of local operators whose starting and ending operators incur the least memory consumption and cache the computation results of the starting and ending operators only, so as to minimize cache memory consumption.
 
 To fully exploit the potential acceleration of cache and offloading, we also integrate an emerging offloading paradigm named Hybrid-Parallel~\cite{sun2024hybridparallel}: during visual model inference on an image, Hybrid-Parallel enables splitting of the input of local operators and assigns different splits to the local robot and the remote GPU server for computation, so that local computation and data transmission of one image can be parallelized to reduce inference latency.
-We extend the scheduler of Hybrid-Parallel to further consider the potential acceleration with cache, such the splitting and assigning will benefit (TODO) from cache on both the robot and the server.
+We extend the scheduler of Hybrid-Parallel to further consider the potential acceleration with cache on the robot and on the server, such that cache at both side can be fully utilized for acceleration.
 
 % The third challenge is under various distribution scenarios of cache (e.g., all cache is located at local or the remote GPU server), how to fully utilize the cache for acceleration.
 % For example, when all cache is located at local due to previous limited wireless network bandwidth and we currently have a suitable wireless network bandwidth to offload computation to the remote GPU server, directly offloading all of the input means abandoning all local cache, damaging the potential gain of cache.
@@ -51,18 +52,18 @@ We extend the scheduler of Hybrid-Parallel to further consider the potential acc
 % Under this paradigm, we can partially leverage the local cache to compute on a split of the input which leads to faster local computation and also reduced transmission data volume, to better utilize the existing cache. 
 % We extend the scheduler of Hybrid-Parallel to further consider the potential acceleration with cache and combine the heuristics about the previous two challenges into a new scheduling algorithm named XXX.
 
-We implemented CacheInf using python and pytorch on Ubuntu20.04. 
-The offloading of computation is handled by the highly optimized distributed module of pytorch with cuda-aware mpi backend which directly accesses GPU buffer, so as to minimize offloading overhead.
-Our baselines include plain local computation, a state-of-the-art computation offloading system named TODO, together with its counterpart with cache enabled modified by us, and Hybrid-Parallel.
+We implemented CacheInf using python, pytorch~\cite{paszke2017automatic} and taichi~\cite{taichi} on Ubuntu20.04. 
+The offloading of computation is handled by the highly optimized distributed module of pytorch~\cite{torch_distributed} with cuda-aware mpi backend which directly accesses GPU buffer, so as to minimize offloading overhead.
+Our baselines include plain local computation, a state-of-the-art computation offloading system named DSCCS~\cite{liang2023dnn}, together with its counterpart with cache enabled modified by us, and Hybrid-Parallel~\cite{sun2024hybridparallel}.
 
-We evaluated CacheInf on a four-wheel robot equipped with a Jetson NX Xavier that is capable of computing locally with the low power consumption GPU.
+We evaluated CacheInf on a four-wheel robot equipped with a Jetson NX Xavier~\cite{jetsonnx} that is capable of computing locally with its low-power-consumption GPU.
 The offloading GPU server is a PC equipped with an Nvidia 2080ti GPU.
 Our datasets include the standard datasets of video frames of DAVIS~\cite{Perazzi2016} and CAD~\cite{Choi_VSWS_2009} each captured by a hand held camera and our self captured video frames using sensors on our robot.
 Extensive evaluation on various visual models and wireless network bandwidth circumstances shows that:
 \begin{itemize}
-    \item CacheInf is fast. Among the baselines, CacheInf reduced the end-to-end inference time by XX\% to XX\%.
-    \item CacheInf saves energy. Among the baselines, CacheInf reduced the average energy consumed to complete inference on one image by XX\% to XX\%.
-    \item CacheInf is also memory-efficient. The above advantages were obtained by only incurring XX\% to XX\% increase in memory consumption for CacheInf.
+    \item CacheInf is fast. Among the baselines, CacheInf reduced the end-to-end inference time by 13.1\% to 48.8\%.
+    \item CacheInf saves energy. Among the baselines, CacheInf reduced the average energy consumed to complete inference on each image by 9.5\% to 39.9\%.
+    \item CacheInf is also memory-efficient. The above advantages were obtained by only incurring 3.2\% to 64.6\% increase in memory consumption for CacheInf, while naively caching the computation results of every local operator incurred 22.0\% to 761.5\% increase in memory consumption.
 \end{itemize}
 
 The major contribution of this paper is our new edge-cloud collaborative caching paradigm to accelerate robotic visual model inference, which reuses cached computation results to both accelerate local computation and computation offloading to remote GPU servers.

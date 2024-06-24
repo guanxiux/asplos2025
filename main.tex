@@ -37,13 +37,13 @@
 %\author{...} % removed for anonymity
 
 \begin{abstract}
-  Real-time visual model inference is crucial for various robotic tasks deployed on mobile robots in the field, but limited onboard computation power and limited and unstable wireless network bandwidth of the mobile robot constraint the speed of either local computation or offloading (e.g., to remote GPU servers) of the visual model inference; the prolonged inference time also increases energy consumption for the inference on each input.
-  We observe that visual model inference typically computes on local geometries and consecutive inference inputs often partially share similar local geometries, which provides opportunity to cache and reuse the computation results to both speed up local computation and offloading.
+  Real-time visual model inference is crucial for various robotic tasks deployed on mobile robots in the field, but limited onboard computation power and limited and unstable wireless network bandwidth of the mobile robot constraint the speed of either local computation or offloading the computation to remote GPU servers for visual model inference; the prolonged inference time also increases energy consumption for the inference on each input.
+  We observe that visual model inference typically computes on local geometries and consecutive inference inputs often share similar local geometries, which provides opportunity to cache and reuse the computation results to both speed up local computation and offloading.
 
   Based on these observations, we propose CacheInf, a collaborative edge-cloud cache system for efficient robotic visual model inference.
   CacheInf first profiles the visual model and schedules for optimal offloading / local computation plan at different ratio of reusable cache.
   At runtime, it analyses the incoming inference input and manages reusable cache on both the robot and the server; then CacheInf dispatches local computation and offloading on reduced input size by reusing cached computation results both on the robot and the server, which accelerates both local computation and offloading.
-  Evaluation on various visual models and wireless network environments shows that CacheInf reduced average end-to-end inference latency by TODO\% to TODO\% and reduced average energy consumption for inference on each input by TODO\% to TODO\%.
+  Evaluation on various visual models and wireless network environments shows that CacheInf reduced end-to-end inference latency by up to 48.8\% and reduced average energy consumption for inference on each input by up to 39.9\%.
 
 \end{abstract}
 

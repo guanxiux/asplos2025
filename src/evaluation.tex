@@ -53,7 +53,7 @@ The bandwidth fluctuation of each of the environments are shown in Fig.~\ref{fig
 \myparagraph{Baselines}
 We selected two SOTA inference acceleration methods as baselines: DSCCS~\cite{liang2023dnn} (referred to as DS), which searches for optimal layer partition strategy of a visual model to offload layers to the GPU server to accelerate inference, and Hybrid-Parallel ~\cite{sun2024hybridparallel} (referred to as HP), which enables parallelization of local computation and offloading by also partitioning the layer input / output of local operators besides layer partitioning to further accelerate inference. 
 We also combined DSCCS with our cache mechanism (referred to as DS-C) to present another perspective about CacheInf's performance gain.
-We refer to CacheInf as Ours in the tables and we also include results of local computation (referred to as Local).
+We refer to CacheInf as Ours in the tables.
 Each result in the tables is followed with standard deviation ($\pm n$).
 
 The evaluation questions are as follows:
@@ -65,10 +65,13 @@ The evaluation questions are as follows:
 \end{itemize}
 
 \begin{figure}[!t]
+    \vspace{-0.3cm}
     \centering
     \subfloat[Targeted people]{\includegraphics[width=0.95\linewidth]{fig/people.drawio.png}}
-    \vfil
+
+    \vspace{-0.2cm}
     \subfloat[Robot moving trajectory]{\includegraphics[width=0.95\linewidth]{fig/robot.drawio.png}}
+    \vspace{-0.3cm}
     \caption{A real-time people-tracking robotic application on our robot based on a state-of-the-art human pose estimation visual model, Kapao~\cite{kapao}.}
     \label{fig:kapao}
     \vspace{-0.3cm}
@@ -80,6 +83,7 @@ The evaluation questions are as follows:
     \centering
     \subfloat[Indoors]{\includegraphics[width=0.8\linewidth]{fig/agrnav.png}}
 
+    \vspace{-0.2cm}
     \subfloat[Outdoors]{\includegraphics[width=0.8\linewidth]{fig/agr_outdoors.png}}
     
     \vspace{-0.3cm}
@@ -116,10 +120,10 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
 
     \caption{Average transmission time, inference time, percentage that transmission time accounts for of the total inference time of Kapao and AGRNav in different environments with different systems.}
     \label{tab:e2e_time}
-    \vspace{-0.5cm}
+    \vspace{-0.7cm}
 \end{table*}
 
-Table~\ref{tab:e2e_time} shows the end-to-end inference latency and the ratio that transmission time takes up the inference latency and compared with the baselines, CacheInf reduced inference latency by 35.5\% to 44.4\% indoors and 29.4\% to 40.0\% outdoors for Kapao and 30.0\% to 48.8\% indoors and 24.2\% to 46.8\% outdoors for AGRNav.
+Table~\ref{tab:e2e_time} shows the end-to-end inference latency and the ratio that transmission time takes up the inference latency and compared with the baselines (we include results of local computation (referred to as Local) for comparison), CacheInf reduced inference latency by 35.5\% to 44.4\% indoors and 29.4\% to 40.0\% outdoors for Kapao and 30.0\% to 48.8\% indoors and 24.2\% to 46.8\% outdoors for AGRNav.
 Compared with HP, while CacheInf reduced transmission time by 6 to 8 ms, CacheInf further reduced inference latency by 8 to 10 ms, confirming the effectiveness of the acceleration of the used sparse local operators.
 CacheInf's highest percentage that transmission time takes up the inference latency across all cases shows that with shrunk transmission data volume with cache enabled and the integration of HP, CacheInf tend to offload computation to the GPU server more often.
 This can also be validated by the increased transmission time and shortened inference latency of DSCCS-C compared with DSCCS.
@@ -131,6 +135,7 @@ The results show that CacheInf increased peak GPU memory consumption by 64.6\% f
 
 
 \begin{table}[htb]
+    \vspace{-0.3cm}
     \renewcommand\arraystretch{0.9}
 \tabcolsep=0.095cm
 \centering
@@ -158,6 +163,7 @@ The results show that CacheInf increased peak GPU memory consumption by 64.6\% f
 
     \caption{The power consumption against time (Watt) and energy consumption per inference (Joule) of Kapao and AGRNav different environments with different systems.}
     \label{tab:e2e_power}
+    \vspace{-0.3cm}
 \end{table}
 
 \begin{table}[htb]
@@ -226,11 +232,12 @@ In terms of GPU memory consumption, CacheInf increased GPU memory consumption by
 \end{tabular}
     \caption{Average transmission time, inference time, percentage that transmission time accounts for of the total inference time of common visual models in different environments with different systems. }
     \label{tab:torchvision_time}
-    \vspace{-0.3cm}
+    \vspace{-0.5cm}
 \end{table*}
 
 \begin{table}[htb]
 
+    \vspace{-0.3cm}
     \renewcommand\arraystretch{0.9}
 \centering
 \tabcolsep=0.12cm
@@ -279,6 +286,7 @@ In terms of GPU memory consumption, CacheInf increased GPU memory consumption by
 
 \begin{table}[htb]
     
+    \vspace{-0.3cm}
     \renewcommand\arraystretch{0.9}
     \centering
     \begin{tabular}{c|c|c|c}
@@ -310,16 +318,22 @@ Then we fixed the wireless network bandwidth to 48Mb/s and examined different sy
 We can also observe when cache ratios fluctuated, the inference latency of CacheInf was more stable than DSCCS-C, which can be attributed to CacheInf's ability to adjust input ratio ($x$) to reduce inference latency.
 
 \begin{figure}[htb]
+    \vspace{-0.3cm}
     \includegraphics[width=0.8\linewidth]{fig/MicroEvent2.png}
+    \vspace{-0.3cm}
     \caption[short]{Kapao: inference latency of different systems at different wireless network bandwidth.}
     \label{fig:micro_e2e}
+    \vspace{-0.3cm}
 \end{figure}
 
 
 \begin{figure}[htb]
+    \vspace{-0.3cm}
     \includegraphics[width=0.8\linewidth]{fig/MicroEvent3.png}
+    \vspace{-0.3cm}
     \caption[short]{Kapao: inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
     \label{fig:micro_ratio}
+    \vspace{-0.3cm}
 \end{figure}
 
 % \subsection{Sensitivity}
@@ -353,3 +367,6 @@ We can also observe when cache ratios fluctuated, the inference latency of Cache
 % \end{table*}
 
 \subsection{Discussion}
+From the above results we can learn that CacheInf is fundamentally trading-off between GPU memory with inference latency, just as systems in other domains with cache enabled.
+Since the resulting increased GPU memory consumption may be unfavorable for devices with tight memory budget, adjusting such trade-off to further reduce extra GPU memory consumption to fit in these devices will be our future work.
+Another limitation of CacheInf is that it relies on continuity of input and thus is unsuitable for scenarios where the perspective of the robot changes dramatically.
