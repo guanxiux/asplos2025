@@ -8,8 +8,8 @@ The robot itself is equipped with low-power-consumption gpu to perform visual mo
 
 \begin{figure*}[!htb]
     \centering
-    \includegraphics[width=\linewidth]{fig/overview.png}
-    \caption[track]{Architecture and working process of CacheInf.}
+    \includegraphics[width=0.98\linewidth]{fig/overview_new.drawio.pdf}
+    \caption[track]{Architecture and workflow of CacheInf.}
     \label{fig:overview}
 \end{figure*}
 
@@ -37,7 +37,7 @@ Note that the computation involved in this process is light-weight compared with
 \subsubsection{Cache-Aware Collaborative Inference and Cache Recoverer}
 In this stage, we select a precomputed plan based on the current estimated wireless network bandwidth and the estimated ratio of reusable cache and execute it at both the robot and the server.
 We pass the gathered sparse pixels that need computation through the sequence of operators involved in the visual model.
-When a local operator with cache is met, we gather extra pixels from cache and form correct input (e.g., wrap around a pixel into a 5x5 pixel block for a convolution kernel with size 3, detailed in Section~\ref{sec:sparse}) and feed it to the corresponding sparse local operator and subsequently the following local operators whose cache is merged.
+When a local operator with cache is met, we gather (depicted in Gather in Figure~\ref{fig:overview}) extra pixels from cache and form correct input (e.g., wrap around a pixel into a 5x5 pixel block for a convolution kernel with size 3, detailed in Section~\ref{sec:sparse}) and feed it to the corresponding sparse local operator and subsequently the following local operators whose cache is merged.
 Offloading computation and receiving computation result of local operators between the robot and the server only happens at local operators with cache because they can gather extra pixels required by the computation of the opportunity side, where we slice the gathered input into splits at the planned ratio and assign them to the robot and the server.
 
 When a first non-local operator (e.g., linear, flatten) is met, Cache Recoverer transforms the cached output of the previous local operator and merges it with the current computation result on the sparse pixels to recover the global geometry for subsequent computation.

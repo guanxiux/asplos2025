@@ -65,31 +65,31 @@ The evaluation questions are as follows:
 \end{itemize}
 
 \begin{figure}[!t]
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
     \centering
     \subfloat[Targeted people]{\includegraphics[width=0.95\linewidth]{fig/people.drawio.png}}
 
-    \vspace{-0.2cm}
+    % \vspace{-0.2cm}
     \subfloat[Robot moving trajectory]{\includegraphics[width=0.95\linewidth]{fig/robot.drawio.png}}
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
     \caption{A real-time people-tracking robotic application on our robot based on a state-of-the-art human pose estimation visual model, Kapao~\cite{kapao}.}
     \label{fig:kapao}
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
 \end{figure}
 
 \begin{figure}[!t]
     
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
     \centering
     \subfloat[Indoors]{\includegraphics[width=0.8\linewidth]{fig/agrnav.png}}
 
-    \vspace{-0.2cm}
+    % \vspace{-0.2cm}
     \subfloat[Outdoors]{\includegraphics[width=0.8\linewidth]{fig/agr_outdoors.png}}
     
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
     \caption{By predicting occlusions in advance, AGRNav~\cite{agrnav} gains an accurate perception of the environment and avoids collisions, resulting in efficient and energy-saving paths.}
     \label{fig:agrnav}
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
 \end{figure}
 
 
@@ -120,7 +120,7 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
 
     \caption{Average transmission time, inference time, percentage that transmission time accounts for of the total inference time of Kapao and AGRNav in different environments with different systems.}
     \label{tab:e2e_time}
-    \vspace{-0.7cm}
+    % \vspace{-0.7cm}
 \end{table*}
 
 Table~\ref{tab:e2e_time} shows the end-to-end inference latency and the ratio that transmission time takes up the inference latency and compared with the baselines (we include results of local computation (referred to as Local) for comparison), CacheInf reduced inference latency by 35.5\% to 44.4\% indoors and 29.4\% to 40.0\% outdoors for Kapao and 30.0\% to 48.8\% indoors and 24.2\% to 46.8\% outdoors for AGRNav.
@@ -128,14 +128,14 @@ Compared with HP, while CacheInf reduced transmission time by 6 to 8 ms, CacheIn
 CacheInf's highest percentage that transmission time takes up the inference latency across all cases shows that with shrunk transmission data volume with cache enabled and the integration of HP, CacheInf tend to offload computation to the GPU server more often.
 This can also be validated by the increased transmission time and shortened inference latency of DSCCS-C compared with DSCCS.
 
-The evidently reduced inference latency of CacheInf leads to reduction of energy consumed per inference by 25.2\% to 34.3\% indoors and 21.2\% to 34.0\% outdoors for Kapao and 27.4\% to 35.7\% indoors and 21.7\% to 39.9\% outdoors for AGRNav, as shown in Table~\ref{tab:e2e_power}, while the runtime power consumption was increased due to higher frequency of inference.
+The reduced inference latency of CacheInf leads to reduction of energy consumed per inference by 25.2\% to 34.3\% indoors and 21.2\% to 34.0\% outdoors for Kapao and 27.4\% to 35.7\% indoors and 21.7\% to 39.9\% outdoors for AGRNav, as shown in Table~\ref{tab:e2e_power}, while the runtime power consumption was increased due to higher frequency of inference.
 
 We report the peak GPU memory consumption on the robot under different strategy in Table~\ref{tab:e2e_mem}: CacheInf (includes both the systems of CacheInf and DSCCS-C), No Cache (includes local computation and HP) and Cache All (a naive strategy that caches the output of every layer).
 The results show that CacheInf increased peak GPU memory consumption by 64.6\% for Kapao and 58.5\% for AGRNav compared with no cache, which is however 72.2\% and 81.6\% lower than the cases of Cache All, demonstrating the effectiveness of CacheInf's strategy to reduce the number cached operators.
 
 
 \begin{table}[htb]
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
     \renewcommand\arraystretch{0.9}
 \tabcolsep=0.095cm
 \centering
@@ -163,7 +163,7 @@ The results show that CacheInf increased peak GPU memory consumption by 64.6\% f
 
     \caption{The power consumption against time (Watt) and energy consumption per inference (Joule) of Kapao and AGRNav different environments with different systems.}
     \label{tab:e2e_power}
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
 \end{table}
 
 \begin{table}[htb]
@@ -232,12 +232,12 @@ In terms of GPU memory consumption, CacheInf increased GPU memory consumption by
 \end{tabular}
     \caption{Average transmission time, inference time, percentage that transmission time accounts for of the total inference time of common visual models in different environments with different systems. }
     \label{tab:torchvision_time}
-    \vspace{-0.5cm}
+    % \vspace{-0.5cm}
 \end{table*}
 
 \begin{table}[htb]
 
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
     \renewcommand\arraystretch{0.9}
 \centering
 \tabcolsep=0.12cm
@@ -281,13 +281,13 @@ In terms of GPU memory consumption, CacheInf increased GPU memory consumption by
 \end{tabular}
     \caption{The power consumption against time (Watt) and energy consumption per inference (Joule) of common visual models in different environments with different systems.}
     \label{tab:torchvision_power}
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
 \end{table}
 
 \begin{table}[htb]
     
     \vspace{-0.3cm}
-    \renewcommand\arraystretch{0.9}
+    % \renewcommand\arraystretch{0.9}
     \centering
     \begin{tabular}{c|c|c|c}
     \toprule
@@ -318,22 +318,22 @@ Then we fixed the wireless network bandwidth to 48Mb/s and examined different sy
 We can also observe when cache ratios fluctuated, the inference latency of CacheInf was more stable than DSCCS-C, which can be attributed to CacheInf's ability to adjust input ratio ($x$) to reduce inference latency.
 
 \begin{figure}[htb]
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
     \includegraphics[width=0.8\linewidth]{fig/MicroEvent2.png}
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
     \caption[short]{Kapao: inference latency of different systems at different wireless network bandwidth.}
     \label{fig:micro_e2e}
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
 \end{figure}
 
 
 \begin{figure}[htb]
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
     \includegraphics[width=0.8\linewidth]{fig/MicroEvent3.png}
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
     \caption[short]{Kapao: inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
     \label{fig:micro_ratio}
-    \vspace{-0.3cm}
+    % \vspace{-0.3cm}
 \end{figure}
 
 % \subsection{Sensitivity}
