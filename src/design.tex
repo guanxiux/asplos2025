@@ -19,10 +19,7 @@ We filter and identify these areas by applying average pooling over the differen
 \end{equation}
 
 Suppose there are $Q$ pixels in \textit{\textbf{uv}} and $H$x$W$ total pixels in each image,
-we define the cache ratio between $I_j$ and $I_{j+1}$ as 
-\begin{equation}
-    r_j = \frac{Q}{H\cdot W}
-\end{equation}
+we define the cache ratio between $I_j$ and $I_{j+1}$ as $r = \frac{Q}{H\cdot W}$.
 
 \subsection{Sparse Local Operators}
 From the above discussion, we have identified the pixels needed to recompute \textit{\textbf{uv}} and we suppose their corresponding features $f_{inp}$ are of size $B$x$C_1$x$Q$, along with the cached input defined as $I'_{inp}$ of size $B$x$C_1$x$H$x$W$.
@@ -217,6 +214,7 @@ The rest of Algorithm~\ref{alg:server} is basically mirrored from that of Algori
        }
       
 \KwRet{$ret$}
+
 \end{algorithm}
 
 
