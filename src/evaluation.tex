@@ -34,7 +34,7 @@ We chose two real-world visual robotic applications as our major workloads: 1. K
 2. AGRNav~\cite{agrnav} depicted in Figure~\ref{fig:agr}, an autonomous air-ground robot navigation application that predicts unobserved obstacles by semantic prediction on point clouds and optimizes the navigation trajectory for the air-ground robot.
 % We evaluated two typical real-world robotic applications on our testbed: Kapao, a real-time people-tracking application on our four-wheeled robot (Fig~\ref{fig:kapao}), and AGRNav, an autonomous navigation application on our air-ground robot (Fig~\ref{fig:agrnav}). 
 % These applications feature different model input and output size patterns: Kapao takes RGB images as input and outputs key points of small data volume. In contrast, AGRNav takes point clouds as input and outputs predicted point clouds and semantics of similar data volume as input, implying that AGRNav needs to transmit more data during distributed inference. 
-We also verified CacheInf's performance on a broader range of visual models common to mobile devices: DenseNet~\cite{huang2018densely}, VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet}, and we used their default implementation of torchvision~\cite{noauthor_torchvision_nodate}. 
+We also verified CacheInf's performance on a broader range of visual models common to mobile devices: VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet}, and we used their default implementation of torchvision~\cite{noauthor_torchvision_nodate}. 
 % And we have verified several models common to mobile devices on a larger scale to further corroborate our observations and findings: DenseNet~\cite{huang2018densely}, VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet}.
 % The models' running statistics are listed in Tab.~\ref{tab:all_app}.
 
@@ -81,7 +81,6 @@ The evaluation questions are as follows:
 
 \subsection{End-to-End Performance on Real-World Applications}
 
-\myparagraph{Inference Time}
 \begin{table*}[htb]
     \centering
 \begin{tabular}{ccc|c|c|c|c|c|c}
@@ -90,13 +89,13 @@ Model(number & Local compu- & \multirow[c]{2}{*}{System} & \multicolumn{2}{|c|}{
 of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & indoors & outdoors \\
 \midrule
 \multirow[c]{4}{*}{Kapao(77M)} & \multirow[c]{4}{*}{1.01($\pm$0.03)} & DSCCS & 0.21($\pm$0.1) & 0.24($\pm$0.12) & 0.36($\pm$0.2) & 0.40($\pm$0.17) & 58.33 & 60.21 \\
- &  & DSCCS-C & 0.18($\pm$0.14) & 0.22($\pm$0.12) & 0.33($\pm$0.25) & 0.37($\pm$0.18) & 66.67 & 67.57 \\
- &  & Hybrid-Parallel & 0.24($\pm$0.15) & 0.28($\pm$0.13) & 0.31($\pm$0.14) & 0.34($\pm$0.12) & 77.42 & 82.35 \\
+ &  & DSCCS-C & 0.22($\pm$0.14) & 0.25($\pm$0.12) & 0.32($\pm$0.25) & 0.34($\pm$0.18) & 68.75 & 73.53 \\
+ &  & HP & 0.24($\pm$0.15) & 0.28($\pm$0.13) & 0.31($\pm$0.14) & 0.34($\pm$0.12) & 77.42 & 82.35 \\
  &  & CacheInf & 0.16($\pm$0.13) & 0.21($\pm$0.18) & 0.20($\pm$0.16) & 0.24($\pm$0.20) & 80.09 & 87.56 \\
 \cline{1-9} \cline{2-9}
 \multirow[c]{4}{*}{AGRNav(0.84M)} & \multirow[c]{4}{*}{0.60($\pm$0.04)} & DSCCS & 0.10($\pm$0.05) & 0.15($\pm$0.05) & 0.41($\pm$0.11) & 0.47($\pm$0.12) & 24.39 & 31.91\\
  &  & DSCCS-C & 0.13($\pm$0.07) & 0.16($\pm$0.06) & 0.38($\pm$0.10) & 0.43($\pm$0.13) & 34.21 & 37.21\\
- &  & Hybrid-Parallel & 0.24($\pm$0.08) & 0.26($\pm$0.07) & 0.30($\pm$0.09) & 0.33($\pm$0.07) & 78.65 & 79.47 \\
+ &  & HP & 0.24($\pm$0.08) & 0.26($\pm$0.07) & 0.30($\pm$0.09) & 0.33($\pm$0.07) & 78.65 & 79.47 \\
  &  & CacheInf & 0.18($\pm$0.08) & 0.20($\pm$0.08) & 0.21($\pm$0.16) & 0.25($\pm$0.18) & 86.71 & 80.01 \\
 \cline{1-9} \cline{2-9}
 \bottomrule
@@ -106,7 +105,17 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
     \label{tab:e2e_time}
 \end{table*}
 
-\myparagraph{Energy Consumption}
+Table~\ref{tab:e2e_time} shows the end-to-end inference latency and the ratio that transmission time takes up the inference latency and compared with the baselines, CacheInf reduced inference latency by 35.5\% to 44.4\% indoors and 29.4\% to 40.0\% outdoors for Kapao and 30.0\% to 48.8\% indoors and 24.2\% to 46.8\% outdoors for AGRNav.
+Compared with HP, while CacheInf reduced transmission time by 6 to 8 ms, CacheInf further reduced inference latency by 8 to 10 ms, confirming the effectiveness of the acceleration of the used sparse local operators.
+CacheInf's highest percentage that transmission time takes up the inference latency across all cases shows that with shrunk transmission data volume with cache enabled and the integration of HP, CacheInf tend to offload computation to the GPU server more often.
+This can also be validated by the increased transmission time and shortened inference latency of DSCCS-C compared with DSCCS.
+
+The evidently reduced inference latency of CacheInf leads to reduction of energy consumed per inference by 25.2\% to 34.3\% indoors and 21.2\% to 34.0\% outdoors for Kapao and 27.4\% to 35.7\% indoors and 21.7\% to 39.9\% outdoors for AGRNav, as shown in Table~\ref{tab:e2e_power}, while the runtime power consumption was increased due to higher frequency of inference.
+
+We report the peak GPU memory consumption on the robot under different strategy in Table~\ref{tab:e2e_mem}: CacheInf (includes both the systems of CacheInf and DSCCS-C), No Cache (includes local computation and HP) and Cache All (a naive strategy that caches the output of every layer).
+The results show that CacheInf increased peak GPU memory consumption by 64.6\% for Kapao and 58.5\% for AGRNav compared with no cache, which is however 72.2\% and 81.6\% lower than the cases of Cache All, demonstrating the effectiveness of CacheInf's strategy to reduce the number cached operators.
+
+
 \begin{table*}[htb]
 \centering
 \begin{tabular}{cc|c|c|c|c}
@@ -117,9 +126,9 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
 \midrule
 \multirow[c]{5}{*}{Kapao(77M)} & Local & 10.61($\pm$0.49) & 10.61($\pm$0.49) & 9.79($\pm$0.03) & 9.79($\pm$0.03) \\
  & DSCCS & 6.38($\pm$2.21) & 6.63($\pm$2.38) & 2.30($\pm$0.55) & 2.65($\pm$0.55) \\
- & DSCCS-C & 6.30($\pm$2.15) & 6.53($\pm$2.12) & 2.08($\pm$0.50) & 2.42($\pm$0.53) \\
+ & DSCCS-C & 6.30($\pm$2.15) & 6.53($\pm$2.12) & 2.02($\pm$0.50) & 2.22($\pm$0.53) \\
  & HP & 7.05($\pm$1.63) & 6.94($\pm$0.98) & 2.19($\pm$0.62) & 2.35($\pm$0.42) \\
- & CacheInf & 7.53($\pm$1.62) & 7.30($\pm$0.96) & 1.51($\pm$0.60) & 2.75($\pm$0.41) \\
+ & CacheInf & 7.53($\pm$1.62) & 7.30($\pm$0.96) & 1.51($\pm$0.60) & 1.75($\pm$0.41) \\
 \cline{1-6}
 \multirow[c]{5}{*}{AGRNav(0.84M)} & Local & 8.11($\pm$0.25) & 8.11($\pm$0.25) & 4.86($\pm$0.01) & 4.86($\pm$0.01) \\
  & DSCCS & 6.21($\pm$1.50) & 7.29($\pm$1.55) & 2.55($\pm$0.19) & 3.43($\pm$0.18) \\
@@ -152,6 +161,12 @@ AGRNav(0.84M) & 82.8 & 713.3 & 131.2\\
 \end{table}
 
 \subsection{Performance on Various Common Models}
+The above conclusions can be further validated by results of a wider range of visual models in Table~\ref{tab:torchvision_time} and Table~\ref{tab:torchvision_power}.
+Across different visual models, CacheInf reduced the inference latency by 13.4\% to 43.6\% indoors and 13.1\% to 45.9\% outdoors, and it results in the reduction in energy consumed per inference to be 11.1\% to 46.7\% indoors and 9.5\% to 42.2\%
+compared with the baselines.
+Note that although CacheInf's gain is still evident, the lower bound of CacheInf's gain decreased on these models compared with Kapao and AGRNav; the reason could be that these models are less computation-intensive, which can be implied from their shorter time for local computation compared with Kapao and AGRNav.
+When inference of a visual models is not computation-intensive, the gain of using sparse local operators in CacheInf will be limited since execution of each local operator will no longer be the bottleneck.
+In terms of GPU memory consumption, CacheInf increased GPU memory consumption by 3.2\% to 24.8\% compared with No Cache, while reducing 12.8\% to 39.5\% GPU memory consumption compared with Cache All.
 
 \begin{table*}[htb]
 
@@ -161,11 +176,11 @@ AGRNav(0.84M) & 82.8 & 713.3 & 131.2\\
  Model(number&  Local compu- & \multirow[c]{2}{*}{System} & \multicolumn{2}{|c|}{Transmission time/ms} & \multicolumn{2}{|c|}{Inference time/ms} & \multicolumn{2}{c}{Percentage(\%)} \\
  of parameters) & taion time/ms &  & indoors & outdoors & indoors & outdoors & indoors & outdoors \\
 \midrule
-\multirow[c]{4}{*}{DenseNet(7M)} & \multirow[c]{4}{*}{74.5($\pm$18.7)} & DSCCS & 16.2($\pm$40.9) & 20.8($\pm$51.9) & 81.4($\pm$27.2) & 86.6($\pm$27.7) & 19.95 & 24.07 \\
- &  & DSCCS-C & 20.4($\pm$43.5) & 25.8($\pm$56.9) & 85.5($\pm$27.9) & 89.6($\pm$29.3) & 23.86 & 28.80 \\
- &  & HP & 53.4($\pm$34.5) & 52.9($\pm$23.9) & 74.5($\pm$85.7) & 55.1($\pm$15.6) & 71.70 & 96.05 \\
- &  & CacheInf & 56.3($\pm$37.5) & 57.5($\pm$43.5) & 76.3($\pm$90.6) & 78.1($\pm$33.6) & 73.79 & 73.62 \\
-\cline{1-9} \cline{2-9}
+% \multirow[c]{4}{*}{DenseNet(7M)} & \multirow[c]{4}{*}{74.5($\pm$18.7)} & DSCCS & 16.2($\pm$40.9) & 20.8($\pm$51.9) & 81.4($\pm$27.2) & 86.6($\pm$27.7) & 19.95 & 24.07 \\
+%  &  & DSCCS-C & 20.4($\pm$43.5) & 25.8($\pm$56.9) & 85.5($\pm$27.9) & 89.6($\pm$29.3) & 23.86 & 28.80 \\
+%  &  & HP & 53.4($\pm$34.5) & 52.9($\pm$23.9) & 74.5($\pm$85.7) & 55.1($\pm$15.6) & 71.70 & 96.05 \\
+%  &  & CacheInf & 56.3($\pm$37.5) & 57.5($\pm$43.5) & 76.3($\pm$90.6) & 78.1($\pm$33.6) & 73.79 & 73.62 \\
+% \cline{1-9} \cline{2-9}
 \multirow[c]{4}{*}{RegNet(54M)} & \multirow[c]{4}{*}{175.0($\pm$23.6)} & DSCCS & 47.6($\pm$47.8) & 60.5($\pm$54.0) & 77.8($\pm$39.3) & 86.2($\pm$37.9) & 61.22 & 70.22 \\
  &  & DSCCS-C & 50.7($\pm$49.8) & 62.5($\pm$53.6) & 70.8($\pm$33.3) & 79.5($\pm$39.2) & 71.61 & 78.61 \\
  &  & HP & 49.6($\pm$21.7) & 59.9($\pm$23.4) & 55.0($\pm$24.8) & 64.2($\pm$25.2) & 90.18 & 93.34 \\
@@ -200,17 +215,17 @@ AGRNav(0.84M) & 82.8 & 713.3 & 131.2\\
 Model(number & \multirow[c]{2}{*}{System} & \multicolumn{2}{|c|}{Power consumption(W)} & \multicolumn{2}{|c}{Energy consumption(J) per inference} \\
 of parameters)&  & indoors & outdoors & indoors & outdoors \\
 \midrule
-\multirow[c]{5}{*}{DenseNet(7M)} & Local & 8.2($\pm$0.27) & 8.2($\pm$0.27) & 0.46($\pm$0.04) & 0.46($\pm$0.04) \\
- & DSCCS & 6.91($\pm$0.45) & 6.86($\pm$0.46) & 0.56($\pm$0.04) & 0.59($\pm$0.04) \\
- & DSCCS-C & 7.01($\pm$0.43) & 6.96($\pm$0.43) & 0.60($\pm$0.07) & 0.52($\pm$0.06) \\
- & HP & 5.36($\pm$0.79) & 5.79($\pm$0.24) & 0.4($\pm$0.06) & 0.32($\pm$0.01) \\
- & CacheInf & 6.01($\pm$0.92) & 6.31($\pm$0.56) & 0.46($\pm$0.12) & 0.49($\pm$0.01) \\
-\cline{1-6}
+% \multirow[c]{5}{*}{DenseNet(7M)} & Local & 8.2($\pm$0.27) & 8.2($\pm$0.27) & 0.46($\pm$0.04) & 0.46($\pm$0.04) \\
+%  & DSCCS & 6.91($\pm$0.45) & 6.86($\pm$0.46) & 0.56($\pm$0.04) & 0.59($\pm$0.04) \\
+%  & DSCCS-C & 7.01($\pm$0.43) & 6.96($\pm$0.43) & 0.60($\pm$0.07) & 0.52($\pm$0.06) \\
+%  & HP & 5.36($\pm$0.79) & 5.79($\pm$0.24) & 0.4($\pm$0.06) & 0.32($\pm$0.01) \\
+%  & CacheInf & 6.01($\pm$0.92) & 6.31($\pm$0.56) & 0.46($\pm$0.12) & 0.49($\pm$0.01) \\
+% \cline{1-6}
 \multirow[c]{5}{*}{RegNet(54M)} & Local & 9.0($\pm$0.3) & 9.0($\pm$0.3) & 1.37($\pm$0.02) & 1.37($\pm$0.02) \\
 & DSCCS & 5.84($\pm$1.79) & 5.36($\pm$1.34) & 0.45($\pm$0.14) & 0.46($\pm$0.12) \\
  & DSCCS-C & 6.04($\pm$1.88) & 5.96($\pm$1.45) & 0.43($\pm$0.16) & 0.47($\pm$0.19) \\
  & HP & 5.24($\pm$1.43) & 5.28($\pm$1.52) & 0.29($\pm$0.08) & 0.34($\pm$0.1) \\
- & CacheInf & 5.20($\pm$1.51) & 5.43($\pm$1.77) & 0.24($\pm$0.08) & 0.327($\pm$0.09) \\
+ & CacheInf & 5.20($\pm$1.51) & 5.23($\pm$1.77) & 0.24($\pm$0.08) & 0.26($\pm$0.09) \\
 \cline{1-6}
 \multirow[c]{5}{*}{ConvNeXt(88M)} & Local & 9.7($\pm$0.34) & 9.7($\pm$0.34) & 1.34($\pm$0.02) & 1.34($\pm$0.02) \\
 & DSCCS & 6.01($\pm$0.27) & 5.71($\pm$1.56) & 0.43($\pm$0.05) & 0.48($\pm$0.13) \\
@@ -243,8 +258,8 @@ of parameters)&  & indoors & outdoors & indoors & outdoors \\
     Model(number & \multicolumn{3}{|c}{Memory Consumption(MB)} \\
      of parameters) & No Cache & Cache All & CacheInf \\
     \midrule
-    DenseNet(7M) & 30.8 & 159.7 & 53.2\\
-    \hline
+    % DenseNet(7M) & 30.8 & 159.7 & 53.2\\
+    % \hline
     RegNet(54M) & 207.5 & 427.7 & 258.9\\
     \hline
     ConvNeXt(88M) & 337.9 & 603.9 & 369.9\\
@@ -260,15 +275,22 @@ of parameters)&  & indoors & outdoors & indoors & outdoors \\
 \end{table}
 
 \subsection{Micro-Event}
+We first present the micro-events about the real-time inference latency of Kapao of different systems under fluctuating bandwidth in Figure~\ref{fig:micro_e2e}.
+And we can learn that CacheInf consistently achieved the lowest inference latency among all the systems and the gain was most significant under lower bandwidth.
+Then we fixed the wireless network bandwidth to 48Mb/s and examined different systems's performance at varied cache ratios from a sequence of video images in Figure~\ref{fig:micro_ratio}: at high cache ratios, CacheInf dramatically reduced inference latency compared with other baselines; at low cache ratios, CacheInf degraded to Hybrid-Parallel or even slightly increased inference latency compared with Hybrid-Parallel, and the reason could be the overhead to analyze reusable cache and update cache.
+We can also observe when cache ratios fluctuated, the inference latency of CacheInf was more stable than DSCCS-C, which can be attributed to CacheInf's ability to adjust input ratio ($x$) to reduce inference latency.
+
 \begin{figure}[htb]
     \includegraphics[width=0.98\linewidth]{fig/MicroEvent2.png}
-    \caption[short]{Micro-events about inference latency of different systems at different wireless network bandwidth.}
+    \caption[short]{Kapao: inference latency of different systems at different wireless network bandwidth.}
+    \label{fig:micro_e2e}
 \end{figure}
 
 
 \begin{figure}[htb]
     \includegraphics[width=0.98\linewidth]{fig/MicroEvent3.png}
-    \caption[short]{Micro-events about inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
+    \caption[short]{Kapao: inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
+    \label{fig:micro_ratio}
 \end{figure}
 
 \subsection{Sensitivity}
