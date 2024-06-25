@@ -12,12 +12,12 @@ Addressing these challenges is essential for enabling robots to effectively perc
 
 \subsection{Visual Models}
 Convolutional layers~\cite{o2015introduction} have become a fundamental building block in visual models, leading to significant breakthroughs in various computer vision tasks. 
-Inspired by the biological structure of the visual cortex~\cite{tripp2019approximating}, these layers apply learnable filters to the input image, performing convolution operations to produce feature maps that highlight the presence of specific patterns at different spatial locations. 
+Inspired by the biological structure of the visual cortex~\cite{tripp2019approximating}, these layers apply learnable filters to the input image, performing convolution operations to produce feature maps that highlight the presence of specific patterns at different spatial locations (i.e., local operators). 
 This enables deep learning models to capture translation-invariant features and learn hierarchical representations~\cite{ma2015hierarchical}, with early layers learning low-level features like edges and corners, and deeper layers learning more complex patterns and object parts. 
 As a result, deep convolutional neural networks (CNNs) have achieved state-of-the-art performance in various vision applications, image classification~\cite{rawat2017deep}, object detection~\cite{galvez2018object}, and semantic segmentation~\cite{wang2018understanding}, due to their ability to effectively capture and learn spatial hierarchies of features from raw input images. 
 As the field of computer vision continues to evolve, convolutional layers are expected to remain a crucial component in the development of advanced models for understanding and analyzing visual data.
 
-Notice that operators for DNN layer (e.g., convolution, ReLU, softmax) can be categorized into two types: local operators and global operators, depending on whether they can be computed independently with partial input according to ~\cite{sun2024hybridparallel}, and the convolutional layer is a typical local operator, as it can be computed with partial input tensor (the blocks in the input tensor for convolution).
+% Notice that operators for DNN layer (e.g., convolution, ReLU, softmax) can be categorized into two types: local operators and global operators, depending on whether they can be computed independently with partial input according to ~\cite{sun2024hybridparallel}, and the convolutional layer is a typical local operator, as it can be computed with partial input tensor (the blocks in the input tensor for convolution).
 
 \subsection{Resource Limitations of Robots}
 In real-world scenarios, robots often navigate and move around to perform tasks such as search and exploration. 
@@ -47,6 +47,6 @@ Edge-Cloud Collaborative Inference expedites the overall inference process by le
 The DSCCS approach~\cite{liang2023dnn} views the visual model in a layer-wise perspective and focuses on model-layer-level scheduling (layer partitioning) for rapid inference;
 Hybrid-Parallel~\cite{sun2024hybridparallel} further offers a more fine-grained control by partitioning and scheduling the computation within local operators, so that the robot can compute on a portion of the input on local operators while at the same time transmitting the result of the input to the GPU server.
 It enhances parallelism and further accelerating inference. 
-However, despite the advancements in these offloading techniques, the limited bandwidth still poses a bottleneck for data transmission, which our caching mechanism effectively mitigates, resulting in a significant improvement in inference performance.
+However, despite the advancements in these offloading techniques, the limited bandwidth still poses a bottleneck for data transmission, which our caching mechanism effectively mitigates and achieved a significant improvement in inference performance.
 
 % Cache related (Guan will take it)
