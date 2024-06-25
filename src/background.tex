@@ -20,11 +20,11 @@ As the field of computer vision continues to evolve, convolutional layers are ex
 % Notice that operators for DNN layer (e.g., convolution, ReLU, softmax) can be categorized into two types: local operators and global operators, depending on whether they can be computed independently with partial input according to ~\cite{sun2024hybridparallel}, and the convolutional layer is a typical local operator, as it can be computed with partial input tensor (the blocks in the input tensor for convolution).
 
 \subsection{Resource Limitations of Robots}
-In real-world scenarios, robots often navigate and move around to perform tasks such as search and exploration. 
-While wireless networks provide high mobility, they also have limited bandwidth, which can significantly impact the performance of robotic IoT systems.
-Wireless transmission of robots is constrained by limited bandwidth, both due to the theoretical upper limit of wireless transmission technologies and the practical instability of wireless networks. 
-For instance, the most advanced Wi-Fi technology, Wi-Fi 6, offers a maximum theoretical bandwidth of 1.2 Gbps for a single stream~\cite{liu2023first}. However, the limited hardware resources on robots often prevent them from fully utilizing the potential of Wi-Fi 6~\cite{yang2022mobile}. 
-Moreover, the actual available bandwidth of wireless networks is often reduced in practice due to various factors, such as the movement of devices~\cite{masiukiewicz2019throughput, pei2013connectivity}, occlusion by physical barriers~\cite{ding2015performance, sarkar2013effect}, and preemption of the wireless channel by other devices~\cite{adame2021time, ren2018proportional}.
+% In real-world scenarios, robots often navigate and move around to perform tasks such as search and exploration. 
+% While wireless networks provide high mobility, they also have limited bandwidth, which can significantly impact the performance of robotic IoT systems.
+% Wireless transmission of robots is constrained by limited bandwidth, both due to the theoretical upper limit of wireless transmission technologies and the practical instability of wireless networks. 
+% For instance, the most advanced Wi-Fi technology, Wi-Fi 6, offers a maximum theoretical bandwidth of 1.2 Gbps for a single stream~\cite{liu2023first}. However, the limited hardware resources on robots often prevent them from fully utilizing the potential of Wi-Fi 6~\cite{yang2022mobile}. 
+% Moreover, the actual available bandwidth of wireless networks is often reduced in practice due to various factors, such as the movement of devices~\cite{masiukiewicz2019throughput, pei2013connectivity}, occlusion by physical barriers~\cite{ding2015performance, sarkar2013effect}, and preemption of the wireless channel by other devices~\cite{adame2021time, ren2018proportional}.
 
 To demonstrate the instability of wireless transmission in real-world situations, we conducted a robot surveillance experiment using four-wheel robots navigating around several given points at 5-40cm/s speed in our lab (indoors) and campus garden (outdoors), with hardware and wireless network settings as described in Sec.~\ref{sec:eva}. 
 We saturated the wireless network connection with iperf ~\cite{noauthor_iperf_nodate} and recorded the average bandwidth capacity between these robots every 0.1s for 5 minutes.
