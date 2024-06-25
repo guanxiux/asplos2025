@@ -336,20 +336,28 @@ We can also observe when cache ratios fluctuated, the inference latency of Cache
     % \vspace{-0.3cm}
 \end{figure}
 
-% \subsection{Sensitivity}
+\subsection{Sensitivity}
 
-% \begin{table*}[htb]
-%     \begin{tabular}{c|c|c|c|c}
-%         \toprule
-%         \multirow[c]{2}{*}{Model} & \multirow[c]{2}{*}{Statistics} & \multicolumn{3}{c}{Difference Filter Parameter (n)} \\
-%         \cline{3-5}
-%         & & 50 & 70 & 130 \\
-%         \midrule
-%         \bottomrule
+\begin{table}[htb]
+    \begin{tabular}{c|c|c|c|c}
+        \toprule
+        \multirow[c]{2}{*}{Model} & \multirow[c]{2}{*}{Statistics} & \multicolumn{3}{c}{Difference Filtering Threshold (N)} \\
+        \cline{3-5}
+        & & 0.1 & 0.2 & 0.3 \\
+        \midrule
+        \multirow[c]{2}{*}{Kapao} & inference latency & & & \\
+            & accuracy (AP) & 75.8 & 74.6 & 72.5 \\
+        \hline
+        \multirow[c]{2}{*}{AGRNav} & inference latency & & & \\
+            & accuracy () & & & \\
+        \hline
+        \multirow[c]{2}{*}{ConvNeXt} & inference latency & & & \\
+            & accuracy () & & & \\
+        \bottomrule
 
-%     \end{tabular}
-%     \caption[accuracy]{How different difference filter parameter (n) for identifying reusable cache affects the inference latency of CacheInf and the accuracy of visual models.}
-% \end{table*}
+    \end{tabular}
+    \caption[accuracy]{How different difference filter threshold (N) for identifying reusable cache affects the inference latency of CacheInf and the accuracy of visual models.}
+\end{table}
 
 % \subsection{Sampling Rate of Video Frames}
 
