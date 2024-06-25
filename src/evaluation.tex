@@ -68,10 +68,8 @@ The evaluation questions are as follows:
 \begin{figure}[!t]
     %\vspace{-0.3cm}
     \centering
-    \subfloat[Targeted people]{\includegraphics[width=0.7\linewidth]{fig/people.drawio.png}}
-
-    %\vspace{-0.3cm}
-    \subfloat[Robot moving trajectory]{\includegraphics[width=0.7\linewidth]{fig/robot.drawio.png}}
+    \subfloat[Targeted people]{\includegraphics[width=0.5\linewidth]{fig/people.drawio.png}}
+    \subfloat[Robot moving trajectory]{\includegraphics[width=0.5\linewidth]{fig/robot.drawio.png}}
     %\vspace{-0.4cm}
     \caption{A real-time people-tracking robotic application on our robot based on a state-of-the-art human pose estimation visual model, Kapao~\cite{kapao}.}
     \label{fig:kapao}
@@ -82,10 +80,8 @@ The evaluation questions are as follows:
     
     %\vspace{-0.3cm}
     \centering
-    \subfloat[Indoors]{\includegraphics[width=0.7\linewidth]{fig/agrnav.png}}
-
-    %\vspace{-0.3cm}
-    \subfloat[Outdoors]{\includegraphics[width=0.7\linewidth]{fig/agr_outdoors.png}}
+    \subfloat[Indoors]{\includegraphics[width=0.5\linewidth]{fig/agrnav.png}}
+    \subfloat[Outdoors]{\includegraphics[width=0.5\linewidth]{fig/agr_outdoors.png}}
     
     %\vspace{-0.4cm}
     \caption{By predicting occlusions in advance, AGRNav~\cite{agrnav} gains an accurate perception of the environment and avoids collisions, resulting in efficient and energy-saving paths.}
@@ -99,7 +95,7 @@ The evaluation questions are as follows:
 \begin{table*}[htb]
     
     %\vspace{-0.3cm}
-    \renewcommand\arraystretch{0.9}
+    \renewcommand\arraystretch{0.95}
     \centering
 \begin{tabular}{ccc|c|c|c|c|c|c}
 \toprule
@@ -137,7 +133,7 @@ The results show that CacheInf increased peak GPU memory consumption by 64.6\% f
 
 \begin{table}[htb]
     % %\vspace{-0.3cm}
-    \renewcommand\arraystretch{0.9}
+    \renewcommand\arraystretch{0.95}
 \tabcolsep=0.095cm
 \centering
 \begin{tabular}{cc|c|c|c|c}
@@ -199,7 +195,7 @@ In terms of GPU memory consumption, CacheInf increased GPU memory consumption by
 \begin{table*}[htb]
 
     %\vspace{-0.3cm}
-    \renewcommand\arraystretch{0.9}
+    \renewcommand\arraystretch{0.95}
     \centering
 \begin{tabular}{ccc|c|c|c|c|c|c}
 \toprule
@@ -291,7 +287,7 @@ In terms of GPU memory consumption, CacheInf increased GPU memory consumption by
 \begin{table}[htb]
     
     %\vspace{-0.3cm}
-    \renewcommand\arraystretch{0.9}
+    \renewcommand\arraystretch{0.95}
     \centering
     \begin{tabular}{c|c|c|c}
     \toprule
@@ -323,7 +319,7 @@ We can also observe when cache ratios fluctuated, the inference latency of Cache
 
 \begin{figure}[htb]
     %\vspace{-0.3cm}
-    \includegraphics[width=0.8\linewidth]{fig/MicroEvent2.png}
+    \includegraphics[width=\linewidth]{fig/MicroEvent2.png}
     %\vspace{-0.3cm}
     \caption[short]{Kapao: inference latency of different systems at different wireless network bandwidth.}
     \label{fig:micro_e2e}
@@ -333,7 +329,7 @@ We can also observe when cache ratios fluctuated, the inference latency of Cache
 
 \begin{figure}[htb]
     %\vspace{-0.3cm}
-    \includegraphics[width=0.8\linewidth]{fig/MicroEvent3.png}
+    \includegraphics[width=\linewidth]{fig/MicroEvent3.png}
     %\vspace{-0.3cm}
     \caption[short]{Kapao: inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
     \label{fig:micro_ratio}

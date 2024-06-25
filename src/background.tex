@@ -31,13 +31,11 @@ We saturated the wireless network connection with iperf ~\cite{noauthor_iperf_no
 
 \begin{figure}[htp]
     \centering
-    \subfloat[Indoors\label{fig:indoors}]{\includegraphics[width=0.48\linewidth]{fig/indoors.pdf}}
-    \hfil
-    \subfloat[Outdoors\label{fig:outdoors}]{\includegraphics[width=0.48\linewidth]{fig/outdoors.pdf}}
+    \subfloat[Indoors\label{fig:indoors}]{\includegraphics[width=0.5\linewidth]{fig/indoors_01.png}}
+    \subfloat[Outdoors\label{fig:outdoors}]{\includegraphics[width=0.5\linewidth]{fig/outdoors_01.png}}
     \caption{The instability of wireless transmission between our robot and a base station in robotic IoT networks.}
     \label{fig:bandwidth} 
 \end{figure}
-
 
 The results in Fig.~\ref{fig:bandwidth} show average bandwidth capacities of 93 Mbps and 73 Mbps for indoor and outdoor scenarios, respectively. 
 The outdoor environment exhibited higher instability, with bandwidth frequently dropping to extremely low values around 0 Mbps, due to the lack of walls to reflect wireless signals and the presence of obstacles like trees between communicating robots, resulting in fewer received signals compared to indoor environments. This limitation on the wireless network bandwidth on the robot poses significant challenges for the efficient and reliable computation offloading of robots in real-world scenarios, particularly in outdoor environments where the instability of wireless networks is more pronounced.
