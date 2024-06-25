@@ -1,5 +1,5 @@
 \subsection{Vision tasks on robots}
-Vision tasks play a crucial role in enabling robots to perceive, understand, and interact with their environment. 
+Vision tasks play a crucial role in enabling robots to perceive, understand, and interact with the environments. 
 Visual information is essential for various robotic tasks, such as object recognition~\cite{galvez2018object}, navigation~\cite{ran2017convolutional}, manipulation~\cite{bayar2018constrained}, and human-robot interaction~\cite{wu2019weight}. 
 The rapid advancements in machine learning, particularly deep learning, have revolutionized the field of computer vision and have been widely adopted in robotic applications, which form the foundation for many high-level robotic tasks.
 
@@ -40,11 +40,13 @@ We saturated the wireless network connection with iperf ~\cite{noauthor_iperf_no
 
 
 The results in Fig.~\ref{fig:bandwidth} show average bandwidth capacities of 93 Mbps and 73 Mbps for indoor and outdoor scenarios, respectively. 
-The outdoor environment exhibited higher instability, with bandwidth frequently dropping to extremely low values around 0 Mbps, due to the lack of walls to reflect wireless signals and the presence of obstacles like trees between communicating robots, resulting in fewer received signals compared to indoor environments. This limitation on the bandwidth of robots' wireless network poses significant challenges for the efficient and reliable operation of robots in real-world scenarios, particularly in outdoor environments where the instability of wireless networks is more pronounced.
+The outdoor environment exhibited higher instability, with bandwidth frequently dropping to extremely low values around 0 Mbps, due to the lack of walls to reflect wireless signals and the presence of obstacles like trees between communicating robots, resulting in fewer received signals compared to indoor environments. This limitation on the bandwidth of robots' wireless network poses significant challenges for the efficient and reliable computation offloading of robots in real-world scenarios, particularly in outdoor environments where the instability of wireless networks is more pronounced.
 
 \subsection{Related Work}
-Collaborative Inference expedites the overall inference process by leveraging a GPU server to handle a portion of the computational workload. 
-While the DSCCS approach~\cite{liang2023dnn} focuses on model layer-level scheduling (layer partitioning) for rapid inference, Hybrid-Parallel~\cite{sun2024hybridparallel} offers a more fine-grained control by scheduling at the local operator level, enhancing parallelism and further accelerating inference. 
-However, despite the advancements in Hybrid-Parallel techniques, the limited bandwidth still poses a bottleneck for data transmission, which our caching mechanism effectively mitigates, resulting in a significant improvement in inference performance.
+Edge-Cloud Collaborative Inference expedites the overall inference process by leveraging a GPU server to handle a portion of the computational workload of the robot. 
+The DSCCS approach~\cite{liang2023dnn} views the visual model in a layer-wise perspective and focuses on model-layer-level scheduling (layer partitioning) for rapid inference;
+Hybrid-Parallel~\cite{sun2024hybridparallel} further offers a more fine-grained control by partitioning and scheduling the computation within local operators, so that the robot can compute on a portion of the input on local operators while at the same time transmitting the result of the input to the GPU server.
+It enhances parallelism and further accelerating inference. 
+However, despite the advancements in these offloading techniques, the limited bandwidth still poses a bottleneck for data transmission, which our caching mechanism effectively mitigates, resulting in a significant improvement in inference performance.
 
 % Cache related (Guan will take it)
