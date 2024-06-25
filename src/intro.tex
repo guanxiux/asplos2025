@@ -1,14 +1,14 @@
 Visual information is vital for various robotic tasks deployed on real-world edge devices (typically mobile robots), such as navigation~\cite{ran2017convolutional}, manipulation~\cite{bayar2018constrained}, and human-robot interaction~\cite{wu2019weight};
 and as a major visual information processing method, fast visual model inference is important for the real-world robotic tasks to timely respond to environment changes. 
-Unfortunately, the mobile robots often suffer slow visual model inference, because they are typically limited in computation power and have limited and unstable wireless network bandwidth~\cite{yang2022mobile}, making both local computation and naively offloading the computation to GPU servers slow.
+Unfortunately, the mobile robots often suffer slow visual model inference, due to their limited computational power and the constrained, unstable wireless network bandwidth~\cite{yang2022mobile}, which slows down  both local computation and naive offloading of computation to GPU servers.
 
-To tackle this problem, we observe that introducing the classic caching mechanism into robotic visual model inference has the potential to accelerate both local computation and offloading the computation to GPU servers.
+To address the challenge of slow visual model inference in mobile robots, we propose leveraging the classic caching mechanism into robotic visual model inference has the potential to accelerate both local computation and offloading the computation to GPU servers.
 It is based on the facts that the input for the robotic visual models is typically a continual stream of images and these models mostly compute on the images using local operators (i.e., operators such as convolution that relies on local geometries of the input images)~\cite{o2015introduction,tripp2019approximating}.
 In such cases, computation results of similar local geometries between consecutive images can be reused to shrink the overall size of the computation, which reduce both local computation time and transmission time when offloading computation to the GPU server.
 
-However, the existing caching systems for visual models are designed for interactive generative image edition on high-end PCs and unfit for robotic tasks on mobile robots~\cite{li_efficient_2023}.
-With their targeted scenario, they assume no perspective changes in the images, consume too much memory by caching computation results of every local operator and do not consider the acceleration opportunity of offloading the computation to other GPU servers.
-A new caching system specifically designed for robotic visual model inference is desired.
+However, existing caching systems for visual models, designed for interactive generative image edition on high-end PCs, are unfit for robotic tasks on mobile robots~\cite{li_efficient_2023}.
+With their targeted scenario, they assume no perspective changes in the images, consume excessive memory by caching computation results of every local operator and lack of consideration for the acceleration opportunities provided by offloading computation to GPU servers.
+A new caching system specifically tailored to the unique requirements of robotic visual model inference is desired.
 
 % However, there is a major gap to apply the existing caching systems for visual models to robotic tasks on mobile robots.
 % They are designed for interactive generative image edition on high-end PCs which assumes no image perspective transformation, consumes too much memory and does not consider the acceleration opportunity of offloading, unfit for robotic tasks on mobile robots.
@@ -21,9 +21,9 @@ A new caching system specifically designed for robotic visual model inference is
 % To tackle this problem, we seek opportunity from the facts that the input for the robotic visual models are typically a continual stream of images and the models mostly compute on these images using local operators (i.e., operators such as convolution that relies on local geometries of the input images).
 % These imply that between visual model inference on consecutive images in visual robotic tasks, part of the previous computed results of local operators can be cached and reused, providing opportunity to both reduce local computation time and reduce transmission data volume, accelerating the overall visual model inference.
 
-To fulfill this gap, in this paper, we propose CacheInf, a collaborative edge-cloud cache system for efficient robotic visual model inference.
+To bridge this gap, in this paper, we propose CacheInf, a collaborative edge-cloud cache system for efficient robotic visual model inference.
 Given a continuous stream of visual input in a robotic visual task, CacheInf analyses the overlapping area between consecutive inputs;
-based on the portion of overlapping area (reusable cache) and the current estimated wireless network bandwidth, CacheInf schedules on the action between reusing local cache to reduce local computation time and reusing the remote cache (e.g., the cache at the GPU server side from the robot's perspective) to reduce transmission time, to ultimately reduce the overall visual model inference latency.
+based on the portion of overlapping area (reusable cache) and the current estimated wireless network bandwidth, CacheInf schedules on the action between reusing local cache to reduce local computation time and reusing the remote cache (e.g., the cache at the GPU server side from the robot's perspective) to minimize transmission time, ultimately reducing the overall visual model inference latency.
 % Schedule cache and offloading...
 % Reduce data volume transmission in offloading at higher bandwidth...
 % At low bandwidth where offloading is not feasible, reduce local computation time...
@@ -31,18 +31,17 @@ based on the portion of overlapping area (reusable cache) and the current estima
 The design of CacheInf is non-trivial.
 The first challenge is to transform cached results to local computation acceleration.
 While the computation of cached areas can be skipped, the remaining uncached areas need computing but can not be computed on the highly optimized local operators for dense local geometries (e.g., conv2d in pytorch~\cite{paszke2017automatic}), since these areas are typically sparse and fragmented, hindering acceleration.
-We designed and implemented sparse local operators based on the optimized sparse spatial data structure provided by taichi~\cite{taichi}, which achieved comparable performance with the default local operators for dense local geometries in pytorch~\cite{paszke2017automatic}.
-The computation results on sparse uncached areas can then be combined with the cache to form the correct result of the global geometry.
+To address this, we designed and implemented sparse local operators based on the optimized sparse spatial data structure provided by taichi~\cite{taichi}, which achieved comparable performance with the default local operators for dense local geometries in pytorch~\cite{paszke2017automatic}, enabling the computation results on sparse uncached areas to be combined with the cache to form the correct result of the global geometry.
 
 The second challenge is how to reduce the cache memory consumption, especially at the robot side which typically has a tight GPU memory budget.
-In visual models, the computation results of local operators typically consumes significantly more memory than the parameters of local operators and naively caching all the computation results leads to heavy GPU memory burden.
+In visual models, the computation results of local operators typically consumes significantly more memory than the parameters of the local operators themselves and naively caching all the computation results leads to a heavy GPU memory burden.
 
 We observe that in visual models, the computation result of a local operator often serves as the input of another local operator. 
-In this case, the computation result of the sparse uncached areas of a local operator can be passed to the following local operators without loss of information, and cache between these two operators can be ignored (or merged to the first operator) to reduce memory consumption.
+In this case, the computation result of the sparse uncached areas of a local operator can be passed to the following local operators without loss of information, allowing the cache between these two operators to be ignored or merged with the first operator to reduce memory consumption.
 We search for opposite to merge cache for each operator and balance between sparse computation acceleration and GPU memory consumption.
 % We greedily search for a continuous sequence of local operators whose starting and ending operators incur the least memory consumption and cache the computation results of the starting and ending operators only, so as to minimize cache memory consumption.
 
-To fully exploit the potential acceleration of cache and offloading, we also integrate an emerging offloading paradigm named Hybrid-Parallel~\cite{sun2024hybridparallel}: during visual model inference on an image, Hybrid-Parallel enables splitting of the input of local operators and assigns different splits to the local robot and the remote GPU server for computation, so that local computation and data transmission of one image can be parallelized to reduce inference latency.
+To fully exploit the potential acceleration of cache and offloading, we integrate an emerging offloading paradigm named Hybrid-Parallel~\cite{sun2024hybridparallel}: during visual model inference on an image, Hybrid-Parallel enables splitting of the input of local operators and assigns different splits to the local robot and the remote GPU server for computation, allowing local computation and data transmission of one image to be parallelized to reduce inference latency.
 We extend the scheduler of Hybrid-Parallel to further consider the potential acceleration with cache on the robot and on the server, such that cache at both side can be fully utilized for acceleration.
 
 % The third challenge is under various distribution scenarios of cache (e.g., all cache is located at local or the remote GPU server), how to fully utilize the cache for acceleration.
@@ -66,7 +65,7 @@ Extensive evaluation on various visual models and wireless network bandwidth cir
     \item CacheInf is also memory-efficient. The above advantages were obtained by only incurring 3.2\% to 64.6\% increase in memory consumption for CacheInf, while naively caching the computation results of every local operator incurred 22.0\% to 761.5\% increase in memory consumption.
 \end{itemize}
 
-The major contribution of this paper is our new edge-cloud collaborative caching paradigm to accelerate robotic visual model inference, which reuses cached computation results to both accelerate local computation and computation offloading to remote GPU servers.
+The major contribution of this paper is our new edge-cloud collaborative caching paradigm, which accelerates robotic visual model inference by reusing cached computation results to both speed up local computation and computation offloading to remote GPU servers.
 The resulting system, CacheInf, collaboratively considers and reuses cached computation results on both the robot and the server and schedules the computation and offloading to minimize visual model inference latency.
 The accelerated visual model inference and the reduced power consumption will make real-world robots more performant on various robotic tasks and nurture more visual models to be deployed in real-world robots.
 The source code and evaluation logs of CacheInf is available at \MYhref{https://github.com/aspols2025_53/CacheInf}{https://github.com/aspols2025\_53/CacheInf}.
