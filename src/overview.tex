@@ -2,7 +2,7 @@
 
 \subsection{Working Environment}
 We assume that the working environment of CacheInf is a mobile robot performing robotic tasks in a real-world field which requires seamless real-time visual model inference on the continuous image stream captured from the on-board camera, to achieve real-time response to various environment changes.
-The robot itself is equipped with low-power-consumption gpu to perform visual model inference which is slow and consumes too much power; it has wireless network access to a remote powerful GPU server that provides opportunity of acceleration, but the connection suffers from limited and unstable wireless network bandwidth.
+The robot itself is equipped with low-power-consumption gpu to perform visual model inference which is slow and consumes too much power; it has wireless network access to a remote powerful GPU server that provides opportunities of acceleration, but the connection suffers from limited and unstable wireless network bandwidth.
 
 % While the requirements of real-time inference does not necessarily imply the requirement of high inference frequency, we measure the real-time metric by the average end-to-end inference latency when the robot is seamlessly performing inference, which leads to high inference frequency; the power consumption is also measured by average power consumption to finish inference on each image in the same scenario.
 
@@ -23,11 +23,11 @@ CacheInf Scheduler functions at the initialization stage and we exclude it in Fi
 \subsubsection{CacheInf Scheduler}
 During the initialization stage of the robotic task and CacheInf is granted access to a visual model and an initial input image.
 CacheInf Scheduler first profiles the visual model based on this initial input and its execution statistics on both the robot and the server.
-Then it decides on the set of operators involved in the visual model that should cache their computation results and computes for an optimized computation and offloading plan for each possible situation including different wireless network bandwidth and different ratio of reusable cache.
+Then it decides on the set of operators involved in the visual model that should cache their computation results and computes for an optimized computation and offloading plan for each possible situation including different wireless network bandwidth and different ratios of reusable cache.
 
 \subsubsection{Cache Tracker}
-Given a pair of consecutive image inputs and the the former one's computation intermediates at the selected operators are cached, Cache Tracker identifies the reusable portion of these computation intermediates.
-We use the standard image stitching method to try to stitch as large as possible area of the two images, which results in a perspective transform that maps the pixels from the former image to the latter.
+Given a pair of consecutive image inputs and the former one's computation intermediates at the selected operators are cached, Cache Tracker identifies the reusable portion of these computation intermediates.
+We use the standard image stitching method to try to stitch the areas of the two images as much as possible, which results in a perspective transform that maps the pixels from the former image to the latter.
 And the same perspective transform can be applied to the cached computation results since they are computed by local operators that keep the local geometries of the input image.
 We then filter the difference between the mapped pixel pairs and find areas of similar appearance whose correspondent cache is reusable.
 Pixels from uncached areas are finally gathered for computation.
@@ -35,13 +35,13 @@ Pixels from uncached areas are finally gathered for computation.
 % For a current next image, we also extract and store its features and match them with the previous features (e.g., using KNN algorithm) and compute a perspective transform between the two images, which transforms the previous image such that the transformed previous image partially overlaps the current image and the non-overlapping areas are also marked.
 % The features of the previous images is then discarded.
 % The same transform can also be applied to the cached computation results since they are computed by local operators that keep the local geometries of the input image, and thus the reusable cached computation results are identified.
-Note that the computation involved in this process is light-weight compared with the visual model inference that typically involves hundreds of operators.
+Note that the computation involved in this process is lightweight compared with the visual model inference that typically involves hundreds of operators.
 
 \subsubsection{Cache-Aware Collaborative Inference and Cache Recoverer}
 In this stage, we select a precomputed plan based on the current estimated wireless network bandwidth and the estimated ratio of reusable cache and execute it at both the robot and the server.
 We pass the gathered sparse pixels that need computation through the sequence of operators involved in the visual model.
 When a local operator with cache is met, we gather (depicted in Gather in Figure~\ref{fig:overview}) extra pixels from cache and form correct input (e.g., wrap around a pixel into a 5x5 pixel block for a convolution kernel with size 3, detailed in Section~\ref{sec:sparse}) and feed it to the corresponding sparse local operator and subsequently the following local operators whose cache is merged.
-Offloading computation and receiving computation result of local operators between the robot and the server only happens at local operators with cache because they can gather extra pixels required by the computation of the opportunity side, where we slice the gathered input into splits at the planned ratio and assign them to the robot and the server.
+Offloading computation and receiving computation results of local operators between the robot and the server only happens at local operators with cache because they can gather extra pixels required by the computation of the opportunity side, where we slice the gathered input into splits at the planned ratio and assign them to the robot and the server.
 
 When a first non-local operator (e.g., linear, flatten) is met, Cache Recoverer transforms the cached output of the previous local operator and merges it with the current computation result on the sparse pixels to recover the global geometry for subsequent computation.
 

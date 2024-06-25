@@ -1,5 +1,5 @@
 \subsection{Vision tasks on robots}
-Vision tasks play a crucial role in enabling robots to perceive, understand, and interact with the environments. 
+Vision tasks play a crucial role in enabling robots to perceive, understand, and interact with the environment. 
 Visual information is essential for various robotic tasks, such as object recognition~\cite{galvez2018object}, navigation~\cite{ran2017convolutional}, manipulation~\cite{bayar2018constrained}, and human-robot interaction~\cite{wu2019weight}. 
 The rapid advancements in machine learning, particularly deep learning, have revolutionized the field of computer vision and have been widely adopted in robotic applications, which form the foundation for many high-level robotic tasks.
 
@@ -7,7 +7,7 @@ However, the deployment of visual models on resource-constrained robots poses si
 Visual models often require significant computational resources and memory, which may not be readily available on robots, especially in mobile and embedded systems. 
 Furthermore, real-time performance is critical for many robotic tasks, as robots need to process and respond to visual information quickly to ensure safe and effective operation. 
 Therefore, fast visual model inference becomes a key requirement for the successful deployment of deep learning models in robotic applications.
-Addressing these challenges is essential for enabling robots to effectively perceive, understand, and interact with their environment in real-time, paving the way for more intelligent and autonomous robotic systems.
+Addressing these challenges is essential for enabling robots to effectively perceive, understand, and interact with their environment in real time, paving the way for more intelligent and autonomous robotic systems.
 
 
 \subsection{Visual Models}
@@ -40,13 +40,13 @@ We saturated the wireless network connection with iperf ~\cite{noauthor_iperf_no
 
 
 The results in Fig.~\ref{fig:bandwidth} show average bandwidth capacities of 93 Mbps and 73 Mbps for indoor and outdoor scenarios, respectively. 
-The outdoor environment exhibited higher instability, with bandwidth frequently dropping to extremely low values around 0 Mbps, due to the lack of walls to reflect wireless signals and the presence of obstacles like trees between communicating robots, resulting in fewer received signals compared to indoor environments. This limitation on the bandwidth of robots' wireless network poses significant challenges for the efficient and reliable computation offloading of robots in real-world scenarios, particularly in outdoor environments where the instability of wireless networks is more pronounced.
+The outdoor environment exhibited higher instability, with bandwidth frequently dropping to extremely low values around 0 Mbps, due to the lack of walls to reflect wireless signals and the presence of obstacles like trees between communicating robots, resulting in fewer received signals compared to indoor environments. This limitation on the wireless network bandwidth on the robot poses significant challenges for the efficient and reliable computation offloading of robots in real-world scenarios, particularly in outdoor environments where the instability of wireless networks is more pronounced.
 
 \subsection{Related Work}
 Edge-Cloud Collaborative Inference expedites the overall inference process by leveraging a GPU server to handle a portion of the computational workload of the robot. 
 The DSCCS approach~\cite{liang2023dnn} views the visual model in a layer-wise perspective and focuses on model-layer-level scheduling (layer partitioning) for rapid inference;
 Hybrid-Parallel~\cite{sun2024hybridparallel} further offers a more fine-grained control by partitioning and scheduling the computation within local operators, so that the robot can compute on a portion of the input on local operators while at the same time transmitting the result of the input to the GPU server.
-It enhances parallelism and further accelerating inference. 
-However, despite the advancements in these offloading techniques, the limited bandwidth still poses a bottleneck for data transmission, which our caching mechanism effectively mitigates and achieved a significant improvement in inference performance.
+It enhances parallelism and further accelerates inference. 
+However, despite the advancements in these offloading techniques, the limited bandwidth still poses a bottleneck for data transmission, which our caching mechanism effectively mitigates and achieves a significant improvement in inference performance.
 
 % Cache related (Guan will take it)

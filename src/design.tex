@@ -10,7 +10,7 @@ Since the computation of local operators relies on local geometries, the same tr
     \label{eq: pt}
 \end{equation}
 
-While the above process minimizes error between $\hat{I}_{j+1}$ and $I_{j+1}$, the remaining difference between them are the areas of new information which are uncached and needed to be recomputed.
+While the above process minimizes error between $\hat{I}_{j+1}$ and $I_{j+1}$, the remaining different areas between them are the areas of new information which are uncached and need to be recomputed.
 We filter and identify these areas by applying average pooling over the difference between $\hat{I}_{j+1}$ and $I_{j+1}$ and the pixels with computed difference greater than a preset threshold $N$ (default to be 0.1 when we normalize the value of each  channel of a pixel to between 0 and 1) will be marked as needed to be recomputed as in Equation~\ref{eq:avg_pool}, where $u,v$ are the pixel indices.
 
 \begin{equation}
