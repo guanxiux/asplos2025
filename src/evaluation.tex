@@ -2,6 +2,7 @@
 
 \begin{figure}[!t]
     \centering
+    \vspace{-0.3cm}
     \subfloat[Four-wheeled robot]{\includegraphics[width=0.48\linewidth]{fig/robot.png}\label{fig:robot}}
     \hfil
     \subfloat[Air-ground robot]{\includegraphics[width=0.40\linewidth]{fig/agr_robot.png}\label{fig:agr}}
@@ -36,7 +37,7 @@ We chose two real-world visual robotic applications as our major workloads: 1. K
 2. AGRNav~\cite{agrnav} depicted in Figure~\ref{fig:agr}, an autonomous air-ground robot navigation application that predicts unobserved obstacles by semantic prediction on point clouds and optimizes the navigation trajectory for the air-ground robot.
 % We evaluated two typical real-world robotic applications on our testbed: Kapao, a real-time people-tracking application on our four-wheeled robot (Fig~\ref{fig:kapao}), and AGRNav, an autonomous navigation application on our air-ground robot (Fig~\ref{fig:agrnav}). 
 % These applications feature different model input and output size patterns: Kapao takes RGB images as input and outputs key points of small data volume. In contrast, AGRNav takes point clouds as input and outputs predicted point clouds and semantics of similar data volume as input, implying that AGRNav needs to transmit more data during distributed inference. 
-We also verified CacheInf's performance on a broader range of visual models common to mobile devices: VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet}, and we used their default implementation of torchvision~\cite{noauthor_torchvision_nodate}. 
+We also verified CacheInf's performance on a broader range of visual models common to mobile devices: VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet} using their default implementation of torchvision~\cite{noauthor_torchvision_nodate}. 
 % And we have verified several models common to mobile devices on a larger scale to further corroborate our observations and findings: DenseNet~\cite{huang2018densely}, VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet}.
 % The models' running statistics are listed in Tab.~\ref{tab:all_app}.
 
@@ -45,14 +46,14 @@ For AGRNav we used the officially available sequence of point clouds input~\cite
 For the rest of the models from torchvision, we used the DAVIS~\cite{Perazzi2016} dataset which are sequences of video images of different objectives captured also using hand-held cameras.
 
 \myparagraph{Experiment Environments}
-The experiments across all systems and all workloads were conducted in two different real-world environments: 1. indoors, where the robot was moving in our office with desks and separators interfering wireless bandwidth;
+The experiments across all systems and all workloads were conducted in two different real-world environments (depicted in Figure~\ref{fig:bandwidth}): 1. indoors, where the robot was moving in our office with desks and separators interfering wireless bandwidth;
 2. outdoors, where the robot was moving in a garden with trees and bushes interfering with wireless signals and less reflection, resulting in lower bandwidth. 
-The bandwidth fluctuation of each of the environments are shown in Fig.~\ref{fig:bandwidth}.
+% The bandwidth fluctuation of each of the environments are shown in Fig.~\ref{fig:bandwidth}.
 % We evaluated two real-world environments: indoors (robots move in our laboratory with desks and separators interfering with wireless signals) and outdoors (robots move in our campus garden with trees and bushes interfering with wireless signals, resulting in lower bandwidth). 
 
 \myparagraph{Baselines}
-We selected two SOTA inference acceleration methods as baselines: DSCCS~\cite{liang2023dnn} (referred to as DS), which searches for optimal layer partition strategy of a visual model to offload layers to the GPU server to accelerate inference, and Hybrid-Parallel ~\cite{sun2024hybridparallel} (referred to as HP), which enables parallelization of local computation and offloading by also partitioning the layer input / output of local operators besides layer partitioning to further accelerate inference. 
-We also combined DSCCS with our cache mechanism (referred to as DS-C) to present another perspective about CacheInf's performance gain.
+We selected two SOTA inference acceleration methods as baselines: DSCCS~\cite{liang2023dnn} (referred to as DS), which searches for optimal layer partition strategy of a visual model to offload layers to the GPU server to accelerate inference, and Hybrid-Parallel ~\cite{sun2024hybridparallel} (referred to as HP), which enables parallelization of local computation and offloading by also partitioning within the output of local operators besides layer partitioning to further accelerate inference. 
+We also combined DSCCS with our cache mechanism (referred to as DS-C) to present another perspective about our cache mechanism.
 We refer to CacheInf as Ours in the tables.
 Each result in the tables is followed with standard deviation ($\pm n$).
 
@@ -61,35 +62,35 @@ The evaluation questions are as follows:
     \item RQ1: How much does CacheInf benefit real-world robotic applications by reducing inference time and energy consumption?
     \item RQ2: How does CacheInf perform on more models common to mobile devices?
     \item RQ3: How is the above gain achieved in CacheInf and what affects it?
-    \item RQ4: What are the limitations and potentials of CacheInf?
+    \item RQ4: The limitations and potentials of CacheInf.
 \end{itemize}
 
 \begin{figure}[!t]
-    % \vspace{-0.3cm}
+    \vspace{-0.3cm}
     \centering
-    \subfloat[Targeted people]{\includegraphics[width=0.95\linewidth]{fig/people.drawio.png}}
+    \subfloat[Targeted people]{\includegraphics[width=0.7\linewidth]{fig/people.drawio.png}}
 
-    % \vspace{-0.2cm}
-    \subfloat[Robot moving trajectory]{\includegraphics[width=0.95\linewidth]{fig/robot.drawio.png}}
-    % \vspace{-0.3cm}
+    \vspace{-0.3cm}
+    \subfloat[Robot moving trajectory]{\includegraphics[width=0.7\linewidth]{fig/robot.drawio.png}}
+    \vspace{-0.4cm}
     \caption{A real-time people-tracking robotic application on our robot based on a state-of-the-art human pose estimation visual model, Kapao~\cite{kapao}.}
     \label{fig:kapao}
-    % \vspace{-0.3cm}
+    \vspace{-0.4cm}
 \end{figure}
 
 \begin{figure}[!t]
     
-    % \vspace{-0.3cm}
+    \vspace{-0.3cm}
     \centering
-    \subfloat[Indoors]{\includegraphics[width=0.8\linewidth]{fig/agrnav.png}}
+    \subfloat[Indoors]{\includegraphics[width=0.7\linewidth]{fig/agrnav.png}}
 
-    % \vspace{-0.2cm}
-    \subfloat[Outdoors]{\includegraphics[width=0.8\linewidth]{fig/agr_outdoors.png}}
+    \vspace{-0.3cm}
+    \subfloat[Outdoors]{\includegraphics[width=0.7\linewidth]{fig/agr_outdoors.png}}
     
-    % \vspace{-0.3cm}
+    \vspace{-0.4cm}
     \caption{By predicting occlusions in advance, AGRNav~\cite{agrnav} gains an accurate perception of the environment and avoids collisions, resulting in efficient and energy-saving paths.}
     \label{fig:agrnav}
-    % \vspace{-0.3cm}
+    \vspace{-0.4cm}
 \end{figure}
 
 
@@ -97,7 +98,7 @@ The evaluation questions are as follows:
 
 \begin{table*}[htb]
     
-    \vspace{-0.3cm}
+    \vspace{-0.5cm}
     \renewcommand\arraystretch{0.9}
     \centering
 \begin{tabular}{ccc|c|c|c|c|c|c}
@@ -120,13 +121,13 @@ of parameters)& tation time/s &  & indoors & outdoors & indoors & outdoors & ind
 
     \caption{Average transmission time, inference time, percentage that transmission time accounts for of the total inference time of Kapao and AGRNav in different environments with different systems.}
     \label{tab:e2e_time}
-    % \vspace{-0.7cm}
+    \vspace{-0.7cm}
 \end{table*}
 
-Table~\ref{tab:e2e_time} shows the end-to-end inference latency and the ratio that transmission time takes up the inference latency and compared with the baselines (we include results of local computation (referred to as Local) for comparison), CacheInf reduced inference latency by 35.5\% to 44.4\% indoors and 29.4\% to 40.0\% outdoors for Kapao and 30.0\% to 48.8\% indoors and 24.2\% to 46.8\% outdoors for AGRNav.
+Table~\ref{tab:e2e_time} shows the inference latency and the ratio that transmission time takes up the inference latency and compared with the baselines (we include results of local computation for comparison, referred to as Local), CacheInf reduced inference latency by 35.5\% to 44.4\% indoors and 29.4\% to 40.0\% outdoors for Kapao and 30.0\% to 48.8\% indoors and 24.2\% to 46.8\% outdoors for AGRNav.
 Compared with HP, while CacheInf reduced transmission time by 6 to 8 ms, CacheInf further reduced inference latency by 8 to 10 ms, confirming the effectiveness of the acceleration of the used sparse local operators.
 CacheInf's highest percentage that transmission time takes up the inference latency across all cases shows that with shrunk transmission data volume with cache enabled and the integration of HP, CacheInf tend to offload computation to the GPU server more often.
-This can also be validated by the increased transmission time and shortened inference latency of DSCCS-C compared with DSCCS.
+This can also be validated by the increased transmission time and reduced inference latency of DSCCS-C compared with DSCCS.
 
 The reduced inference latency of CacheInf leads to reduction of energy consumed per inference by 25.2\% to 34.3\% indoors and 21.2\% to 34.0\% outdoors for Kapao and 27.4\% to 35.7\% indoors and 21.7\% to 39.9\% outdoors for AGRNav, as shown in Table~\ref{tab:e2e_power}, while the runtime power consumption was increased due to higher frequency of inference.
 
@@ -143,6 +144,7 @@ The results show that CacheInf increased peak GPU memory consumption by 64.6\% f
 \toprule
 & \multirow[c]{3}{*}{\rotatebox[origin=c]{45}{System}} & \multicolumn{2}{|c}{Power} & \multicolumn{2}{|c}{Energy consumption(J)} \\
 & &  \multicolumn{2}{|c}{consumption(W)} & \multicolumn{2}{|c}{per inference}\\
+\cline{3-6}
 &  & indoors & outdoors & indoors & outdoors \\
 \midrule
 \midrule
@@ -163,12 +165,12 @@ The results show that CacheInf increased peak GPU memory consumption by 64.6\% f
 
     \caption{The power consumption against time (Watt) and energy consumption per inference (Joule) of Kapao and AGRNav different environments with different systems.}
     \label{tab:e2e_power}
-    % \vspace{-0.3cm}
+    \vspace{-0.3cm}
 \end{table}
 
 \begin{table}[htb]
-    
-    \renewcommand\arraystretch{0.9}
+    \vspace{-0.2cm}
+    \renewcommand\arraystretch{0.95}
 \centering
 \begin{tabular}{c|c|c|c}
 \toprule
@@ -183,7 +185,7 @@ AGRNav(0.84M) & 82.8 & 713.3 & 131.2\\
 
     \caption{Peak GPU memory consumption of different caching strategy on Kapao and AGRNav. }
     \label{tab:e2e_mem}
-    \vspace{-0.3cm}
+    \vspace{-0.7cm}
 \end{table}
 
 \subsection{Performance on Various Common Models}
@@ -196,6 +198,7 @@ In terms of GPU memory consumption, CacheInf increased GPU memory consumption by
 
 \begin{table*}[htb]
 
+    \vspace{-0.5cm}
     \renewcommand\arraystretch{0.9}
     \centering
 \begin{tabular}{ccc|c|c|c|c|c|c}
@@ -232,19 +235,20 @@ In terms of GPU memory consumption, CacheInf increased GPU memory consumption by
 \end{tabular}
     \caption{Average transmission time, inference time, percentage that transmission time accounts for of the total inference time of common visual models in different environments with different systems. }
     \label{tab:torchvision_time}
-    % \vspace{-0.5cm}
+    \vspace{-0.3cm}
 \end{table*}
 
 \begin{table}[htb]
 
-    % \vspace{-0.3cm}
-    \renewcommand\arraystretch{0.9}
+    \vspace{-0.3cm}
+    \renewcommand\arraystretch{0.95}
 \centering
 \tabcolsep=0.12cm
 \begin{tabular}{cc|c|c|c|c}
 \toprule
  & \multirow[c]{3}{*}{\rotatebox[origin=c]{45}{System}} & \multicolumn{2}{|c}{Power} & \multicolumn{2}{|c}{Energy consumption(J)} \\
 & &  \multicolumn{2}{|c}{consumption(W)} & \multicolumn{2}{|c}{per inference}\\
+\cline{3-6}
  &  & indoors & outdoors & indoors & outdoors \\
 \midrule
 % \multirow[c]{5}{*}{DenseNet(7M)} & Local & 8.2($\pm$0.27) & 8.2($\pm$0.27) & 0.46($\pm$0.04) & 0.46($\pm$0.04) \\
@@ -281,13 +285,13 @@ In terms of GPU memory consumption, CacheInf increased GPU memory consumption by
 \end{tabular}
     \caption{The power consumption against time (Watt) and energy consumption per inference (Joule) of common visual models in different environments with different systems.}
     \label{tab:torchvision_power}
-    % \vspace{-0.3cm}
+    \vspace{-0.5cm}
 \end{table}
 
 \begin{table}[htb]
     
     \vspace{-0.3cm}
-    % \renewcommand\arraystretch{0.9}
+    \renewcommand\arraystretch{0.95}
     \centering
     \begin{tabular}{c|c|c|c}
     \toprule
@@ -308,7 +312,7 @@ In terms of GPU memory consumption, CacheInf increased GPU memory consumption by
     
         \caption{Peak GPU memory consumption of different caching strategy on common visual models. }
         \label{tab:torchvision_mem}
-    \vspace{-0.3cm}
+    \vspace{-0.8cm}
 \end{table}
 
 \subsection{Micro-Event}
@@ -318,48 +322,61 @@ Then we fixed the wireless network bandwidth to 48Mb/s and examined different sy
 We can also observe when cache ratios fluctuated, the inference latency of CacheInf was more stable than DSCCS-C, which can be attributed to CacheInf's ability to adjust input ratio ($x$) to reduce inference latency.
 
 \begin{figure}[htb]
-    % \vspace{-0.3cm}
+    \vspace{-0.3cm}
     \includegraphics[width=0.8\linewidth]{fig/MicroEvent2.png}
-    % \vspace{-0.3cm}
+    \vspace{-0.3cm}
     \caption[short]{Kapao: inference latency of different systems at different wireless network bandwidth.}
     \label{fig:micro_e2e}
-    % \vspace{-0.3cm}
+    \vspace{-0.3cm}
 \end{figure}
 
 
 \begin{figure}[htb]
-    % \vspace{-0.3cm}
+    \vspace{-0.3cm}
     \includegraphics[width=0.8\linewidth]{fig/MicroEvent3.png}
-    % \vspace{-0.3cm}
+    \vspace{-0.3cm}
     \caption[short]{Kapao: inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
     \label{fig:micro_ratio}
-    % \vspace{-0.3cm}
+    \vspace{-0.3cm}
 \end{figure}
 
 \subsection{Sensitivity}
 
 \begin{table}[htb]
+    \vspace{-0.3cm}
     \begin{tabular}{c|c|c|c|c}
         \toprule
-        \multirow[c]{2}{*}{Model} & \multirow[c]{2}{*}{Statistics} & \multicolumn{3}{c}{Difference Filtering Threshold (N)} \\
+        \multirow[c]{2}{*}{Model} & \multirow[c]{2}{*}{Statistics} & \multicolumn{3}{c}{N} \\
         \cline{3-5}
         & & 0.1 & 0.2 & 0.3 \\
         \midrule
-        \multirow[c]{2}{*}{Kapao} & inference latency & & & \\
+        \multirow[c]{2}{*}{Kapao} & Inference Latency/s & 0.20 & 0.18 & 0.17\\
+        \cline{2-5}
             & accuracy (AP) & 75.8 & 74.6 & 72.5 \\
         \hline
-        \multirow[c]{2}{*}{AGRNav} & inference latency & & & \\
-            & accuracy () & & & \\
+        \multirow[c]{2}{*}{AGRNav} & Inference Latency/s & 0.21 & 0.19 & 0.17 \\
+        \cline{2-5}
+            & accuracy (F1) & 98.9 & 98.5 & 98.4\\
         \hline
-        \multirow[c]{2}{*}{ConvNeXt} & inference latency & & & \\
-            & accuracy () & & & \\
+        \multirow[c]{2}{*}{ConvNeXt} & Inference Latency/ms & 44.7 & 38.6 & 34.8\\
+        \cline{2-5}
+            & accuracy (Acc@1) & 100.0 & 100.0 & 99.2 \\
         \bottomrule
-
     \end{tabular}
-    \caption[accuracy]{How different difference filter threshold (N) for identifying reusable cache affects the inference latency of CacheInf and the accuracy of visual models.}
+    \caption[accuracy]{How different difference filtering threshold (N) for identifying reusable cache affects the inference latency of CacheInf indoors and the accuracy of visual models.}
+    \vspace{-0.8cm}
+    \label{tab:sensitvity}
 \end{table}
 
-% \subsection{Sampling Rate of Video Frames}
+With higher difference filtering threshold ($N$), CacheInf will mark cached computation result for areas with more difference as reusable, and we present its influence on the accuracy performance of the selected representative visual models in Table~\ref{tab:sensitvity}.
+We used the output of the same model with the same input under local computation as the groundtruth to compute accuracy.
+Each model has a different accuracy metric: AP stands for average precision for people detection for Kapao; F1 examines the portion of points in a point cloud that is close to the groundtruth; Acc@1 is the percentage of the predicted classification results matching with the groundtruth.
+From Table~\ref{tab:sensitvity} we can learn that loosening the constraint of cache identification by increasing $N$ slightly decreased accuracy of visual models, with the advantage of further reduced inference latency.
+And for visual models with pixel level output (e.g., predicted people pose of Kapao and predicted point cloud of AGRNav), such influence will be perceptible, while it does not significantly affect the accuracy of the visual models with comprehensive output (e.g., classification results of ConvNeXt).
+
+
+
+
 
 % \begin{table*}[htb]
 %     \begin{tabular}{c|c|c|c|c}
