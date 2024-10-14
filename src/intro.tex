@@ -1,28 +1,49 @@
 Visual information is vital for various robotic tasks deployed on real-world edge devices (typically mobile robots), such as navigation~\cite{ran2017convolutional}, manipulation~\cite{bayar2018constrained}, and human-robot interaction~\cite{wu2019weight};
 and as a major visual information processing method, fast visual model inference is important for the real-world robotic tasks to timely respond to environment changes. 
-Unfortunately, the mobile robots often suffer slow visual model inference, due to their limited computational power and the limited and unstable wireless network bandwidth~\cite{yang2022mobile}, which slows down both local computation and naive offloading of computation to GPU servers.
+Unfortunately, the mobile robot typically has limited computational power and limited and unstable wireless network bandwidth~\cite{yang2022mobile}, which slow down both local computation on the mobile robot and naive offloading of computation to GPU servers.
+Thus the mobile robot often suffers slow visual model inference that interferes the robotic task performance (e.g., 1.xx seconds in human pose estimation~\cite{kapao} or 2.xx seconds in surrounding occlusion prediction~\cite{agrnav}).
+% Unfortunately, the mobile robots often suffer slow visual model inference, due to their limited computational power and the limited and unstable wireless network bandwidth~\cite{yang2022mobile}, which slows down both local computation and naive offloading of computation to GPU servers.
 
-Distributed inference has emerged as a promising approach to accelerate inference on robots by leveraging GPU servers (e.g., edge devices with powerful GPUs) via the Internet of Things for robots (robotic IoT). 
-While various parallel methods have been proposed and proven efficient in robotic IoT~\cite{sun2024hybridparallel}, the communication cost between the robot and GPU server remains a significant bottleneck, especially in robotic IoT environments with limited bandwidth.
+To address this problem, we seek enlightenment from previous work focusing on local computation acceleration on fixed edge devices introducing the caching mechanism.
+They are based on the fact that the visual models extensively use operators (e.g., convolution, pooling) whose computation results (i.e. activations) are spatially correlated to the input image: the value of each pixel on the activations is dominated by a block of the input image (i.e., receptive field) determined by the model architecture.
+Given a continuous stream of images, they either 1. recognize the movement of the receptive fields and interpolate (reuse) the cached previous activations accordingly to skip the activation computation, or 2. in cases of movement recognition failure, execute full local computation (recompute) on the input image to get latest activations.
 
-To address the challenge of high communication costs in distributed inference for robotic IoT, we propose leveraging the classic caching mechanism, which has proven efficient and widely used in robotic visual tasks. 
-By exploiting the fact that robotic visual models typically process a continual stream of images using local operators (e.g., convolution) that rely on local geometries of the input images~\cite{o2015introduction,tripp2019approximating}, the caching mechanism performs complete inference on key frames and reuses the cached results for the following consecutive frames, thus reducing their computational burden. 
-This approach effectively shrinks the overall size of the computation and reduces the required communication volume between the robot and GPU server. 
-Consequently, our proposed method accelerates the distributed inference of robotic visual models, demonstrating the potential of combining distributed inference and caching to achieve a synergistic effect greater than the sum of their individual benefits.
+Introducing such caching mechanism to visual model inference on mobile robots seems able to skip local activation computation and reduce transmission data volume in computation offloading (since only recognized movement of receptive fields needs to be transmitted), but it faces a dilemma on mobile robots which feature frequent camera perspective movement.
+Changes in camera perspective typically bring new scenes or changed occlusion into the images, which cannot be covered by receptive field movement (recognition failure).
+To cope with this situation, the above methods can only either ignore certain recognition failure at the cost of severely degraded inference accuracy (25.89\% lower in~\cite{}), or frequently execute full local computation or full transmission of the input images during computation offloading, sacrificing inference speed.
+% When camera perspective moves, possibly new scenes or changed occlusion cause the consecutive images to differ in a way that cannot be covered by receptive field movement, and such changes happen on a small portion (e.g., 5\%) of the pixels on the input image will cause a larger portion (e.g., 25\%) of pixels on the activations to change, because the receptive fields are often larger than a pixel (e.g., 20X20) and overlap.
+% Simply introducing such caching mechanism seems able to accelerate both local computation and computation offloading by either skipping local activation computation or only necessitating the transmission of the recognized movement of receptive fields during computation offloading. But we 
+
+The key reason to their dilemma is that between wholly reusing or recomputing the activations which sacrifices accuracy or inference speed, there lacks an intermediate option that allows partial reusing and partial recomputing the activations to tradeoff between accuracy and inference speed.
+When continuously wholly reusing activations of a reference frame, the difference between the new frames and the reference frame accumulates and causes either degraded accuracy or triggering of full recomputation; but with the ability to partial reusing and partial recomputing the activations, we can selectively update the blocks with most differences while reusing the computation results of the others, mitigating the accumulation of error while accelerating both local computation and computation offloading via caching. 
+
+
+% Given a continuous stream of images, they recognize the movement of the receptive fields (represented by motion vectors of the receptive fields) by matching similar pixel blocks on the consecutive input images and interpolate the activations accordingly to form the new activations, skipping the computation of the activations with the local operators and thus accelerating local computation.
+
+% It is based on the facts that the input for the robotic visual models is typically a continual stream of images and these models mostly compute on the images using local operators (i.e., operators such as convolution that rely on local geometries of the input images)~\cite{o2015introduction,tripp2019approximating}.
+% In such cases, computation results of similar local geometries between consecutive images can be reused to shrink the overall size of the computation, which reduces both local computation time and transmission time when offloading computation to the GPU server.
+
+% Distributed inference has emerged as a promising approach to accelerate inference on robots by leveraging GPU servers (e.g., edge devices with powerful GPUs) via the Internet of Things for robots (robotic IoT). 
+% While various parallel methods have been proposed and proven efficient in robotic IoT~\cite{sun2024hybridparallel}, the communication cost between the robot and GPU server remains a significant bottleneck, especially in robotic IoT environments with limited bandwidth.
+
+% To address the challenge of high communication costs in distributed inference for robotic IoT, we propose leveraging the classic caching mechanism, which has proven efficient and widely used in robotic visual tasks. 
+% By exploiting the fact that robotic visual models typically process a continual stream of images using local operators (e.g., convolution) that rely on local geometries of the input images~\cite{o2015introduction,tripp2019approximating}, the caching mechanism performs complete inference on key frames and reuses the cached results for the following consecutive frames, thus reducing their computational burden. 
+% This approach effectively shrinks the overall size of the computation and reduces the required communication volume between the robot and GPU server. 
+% Consequently, our proposed method accelerates the distributed inference of robotic visual models, demonstrating the potential of combining distributed inference and caching to achieve a synergistic effect greater than the sum of their individual benefits.
 
 % To address the challenge of slow visual model inference on mobile robots, we propose leveraging the classic caching mechanism into robotic visual model inference has the potential to accelerate both local computation and offloading the computation to GPU servers.
 % It is based on the facts that the input for the robotic visual models is typically a continual stream of images and these models mostly compute on the images using local operators (i.e., operators such as convolution that rely on local geometries of the input images)~\cite{o2015introduction,tripp2019approximating}.
 % In such cases, computation results of similar local geometries between consecutive images can be reused to shrink the overall size of the computation, which reduces both local computation time and transmission time when offloading computation to the GPU server.
 
-However, simply combining distributed inference and caching mechanisms together faces significant challenges. 
-First, existing caching systems suffer from the dilemma between the accuracy of inference results and reduced computation burden, which is more costly in distributed inference on robotic IoT. 
-To reduce the cumulative error on the inference results caused by recomputation based on the same cache result, existing caching systems need to perform complete inference on the key frames frequently, which fails to effectively reduce the computational burden through caching. 
-Such complete inference incurs significant communication costs for distributed inference on robotic IoT and should be avoided as much as possible without compromising the accuracy of the inference results.
+% However, simply combining distributed inference and caching mechanisms together faces significant challenges. 
+% First, existing caching systems suffer from the dilemma between the accuracy of inference results and reduced computation burden, which is more costly in distributed inference on robotic IoT. 
+% To reduce the cumulative error on the inference results caused by recomputation based on the same cache result, existing caching systems need to perform complete inference on the key frames frequently, which fails to effectively reduce the computational burden through caching. 
+% Such complete inference incurs significant communication costs for distributed inference on robotic IoT and should be avoided as much as possible without compromising the accuracy of the inference results.
 
-Second, existing caching systems ignore the cost of reusing previous cache results. 
-These systems are designed for interactive generative image editing on high-end PCs, where the cache results are allocated on the PC, and the reusing cost can be ignored. 
-However, when applied to distributed inference, the cache results are allocated between the robot and the GPU server, and reusing costs (i.e., extra communication cost due to the limited and unstable wireless network bandwidth) should be considered. 
-Therefore, a new caching system specifically tailored for combining with distributed inference on robotic visual models is desired.
+% Second, existing caching systems ignore the cost of reusing previous cache results. 
+% These systems are designed for interactive generative image editing on high-end PCs, where the cache results are allocated on the PC, and the reusing cost can be ignored. 
+% However, when applied to distributed inference, the cache results are allocated between the robot and the GPU server, and reusing costs (i.e., extra communication cost due to the limited and unstable wireless network bandwidth) should be considered. 
+% Therefore, a new caching system specifically tailored for combining with distributed inference on robotic visual models is desired.
 
 % However, existing caching systems for visual models, designed for interactive generative image edition on high-end PCs, are unfit for robotic tasks on mobile robots~\cite{li_efficient_2023}.
 % With their targeted scenario, they assume no perspective changes in the images, consume excessive memory by caching computation results of every local operator and lack consideration for the acceleration opportunities provided by offloading computation to GPU servers.
@@ -94,7 +115,7 @@ Extensive evaluation over various visual models and wireless network bandwidth c
 The major contribution of this paper is our new edge-cloud collaborative caching paradigm, which accelerates robotic visual model inference by reusing cached computation results to both speed up local computation and computation offloading to remote GPU servers.
 The resulting system, CacheInf, collaboratively considers and reuses cached computation results on both the robot and the server and schedules the computation and offloading to minimize visual model inference latency.
 The accelerated visual model inference and the reduced power consumption will make real-world robots more performant on various robotic tasks and nurture more visual models to be deployed in real-world robots.
-The source code and evaluation logs of CacheInf is available at \MYhref{https://github.com/aspols2025-53/CacheInf}{https://github.com/aspols2025-53/CacheInf}.
+The source code and evaluation logs of CacheInf is available at \MYhref{todo}{todo}.
 
 The rest of this paper is organized as follows.
 Chapter two introduces background and related work.

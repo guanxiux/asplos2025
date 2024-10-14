@@ -1,0 +1,1 @@
+Reduce mathematical equations
