@@ -76,7 +76,7 @@ This is because the former operators have smaller receptive fields compared with
 Based on these observations, we design a mechanism in CacheInf to both selectively and adaptively choose the operator to cache its computed activations and the portion of activations to be recomputed according to the levels of difference across input images detected and the amount of possible computation reduction, achieving maximal computation reduction while maintaining high inference accuracy.
 
 The second challenge is to minimize the overall inference latency considering the interaction between the mobile robot and the GPU server.
-One major obstacle is that switching between local computation and computation offloading under the caching mechanism (e.g., when wireless network bandwidth changes) typically requires costly one full local recomputation or full transmission of the input image, and such cost hinders an eager scheduling method from adopting such switching to gain further overall acceleration.
+One major obstacle is that switching between local computation and computation offloading under the caching mechanism (e.g., when wireless network bandwidth changes) typically requires costly one full local recomputation or full transmission of the input image, and such cost hinders a greedy scheduling method from adopting such switching to gain further overall acceleration.
 To overcome this issue, we schedule between local computation and computation offloading by looking ahead several steps with the predicted future wireless network bandwidth and possible computation reduction based on previous records, to minimize the overall inference latency.
 
 We implement CacheInf based on python and pytorch integrated with self-implemented C++ cuda extensions.
