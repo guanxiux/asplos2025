@@ -1,1 +1,8 @@
 Reduce mathematical equations
+
+
+Visual information processing is crucial for mobile robots performing tasks such as navigation, manipulation, and human-robot interaction. However, limited computational power and unstable wireless network bandwidth on these robots lead to slow visual model inference, hindering real-time responsiveness and increasing energy consumption. Existing caching mechanisms designed for fixed edge devices reduce computation by reusing activations but face challenges on mobile robots due to frequent camera perspective changes, which can degrade inference accuracy or speed.
+
+We propose CacheInf, a high-performance edge-cloud caching system for efficient visual model inference on mobile robots. CacheInf selectively reuses cached activations from a reference frame and recomputes others based on statistical metrics like the mean square error between receptive fields of consecutive frames. This approach minimizes required computation, accelerates both local processing and computation offloading, and mitigates error accumulation in activations, achieving an optimal trade-off between inference accuracy and speed.
+
+By adaptively choosing which activations to reuse and which to recompute, CacheInf effectively reduces inference latency and energy consumption on mobile robots. This advancement enhances the performance of robots in real-world tasks by enabling faster and more efficient visual model inference, allowing timely responses to environmental changes.
