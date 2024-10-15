@@ -1,0 +1,89 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Template for ASPLOS papers.
+%
+% History:
+% 
+% ASPLOS originally used jpaper.cls for submission but required acmart.cls for the
+% final camera-ready version. To avoid a change in format, starting ASPLOS 2024 Fall 
+% cycle, both the submission and the camera-ready versions started using acmart.cls.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% use the base acmart.cls version 1.92
+% use the sigplan proceeding template with the default 10 pt fonts
+% nonacm option removes ACM related text in the submission. 
+\documentclass[nonacm,sigplan]{acmart}
+
+% enable page numbers
+\settopmatter{printfolios=true}
+
+% make references clickable 
+\usepackage[]{hyperref}
+\usepackage{xcolor}
+\newcommand{\MYhref}[3][blue]{\href{#2}{\color{#1}{#3}}}%
+\usepackage{graphicx}
+\usepackage{rotating}
+\usepackage{float}
+\DeclareGraphicsExtensions{.pdf,.png,.jpg}
+\usepackage{subfig}
+\usepackage[ruled,linesnumbered]{algorithm2e}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[ruled,linesnumbered]{algorithm2e}
+\newcommand{\myparagraph}[1]{\textbf{#1.}}
+\setlength{\parskip}{0pt}
+
+\begin{document}
+
+\title{CacheInf: Collaborative Edge-Cloud Cache System for Efficient Robotic Visual Model Inference}
+
+%\author{...} % removed for anonymity
+
+\begin{abstract}
+  Real-time visual model inference is crucial for various robotic tasks deployed on mobile robots in the field, but limited onboard computation power and limited and unstable wireless network bandwidth of the mobile robot constraint the speed of either local computation or offloading the computation to remote GPU servers for visual model inference; the prolonged inference time also increases energy consumption for the inference on each input.
+  We observe operators in visual models typically compute on local geometries and consecutive inference inputs often share similar local geometries, which provides opportunities to cache and reuse computation results to accelerate both local computation and offloading.
+
+  Based on these observations, we propose CacheInf, a collaborative edge-cloud cache system for efficient robotic visual model inference.
+  CacheInf first profiles the visual model and schedules for optimal offloading / local computation plan at different ratios of reusable cache.
+  At runtime, it analyses the incoming inference input and manages reusable cache on both the robot and the server; then CacheInf dispatches local computation and offloading on reduced input size by reusing cached computation results both on the robot and the server, which accelerates both local computation and offloading.
+  Evaluation on various visual models and wireless network environments shows CacheInf reduced end-to-end inference latency by up to 48.8\% and reduced average energy consumption for inference on each input by up to 39.9\%.
+
+\end{abstract}
+
+\maketitle % should come after the abstract
+\pagestyle{plain} % should come right after \maketitle
+
+
+\section{Introduction}
+\input{src/intro.tex}
+
+\section{Background}
+\input{src/background.tex}
+
+\section{System Overview}
+\input{src/overview.tex}
+
+\section{Design}
+\input{src/design.tex}
+
+\section{Implementation}
+\input{src/impl.tex}
+
+\section{Evaluation}
+\input{src/evaluation.tex}
+\label{sec:eva}
+
+
+
+
+\section{Conclusion}
+\input{src/conclusion.tex}
+
+
+
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
+

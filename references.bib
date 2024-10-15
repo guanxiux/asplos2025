@@ -822,5 +822,60 @@ keywords = {sparse data structures, GPU computing}
 }
 
 
+@inproceedings{buckler_eva_2018,
+	title = {{EVA}²: Exploiting Temporal Redundancy in Live Computer Vision},
+	url = {https://ieeexplore-ieee-org.eproxy.lib.hku.hk/document/8416853/?arnumber=8416853},
+	doi = {10.1109/ISCA.2018.00051},
+	shorttitle = {{EVA}²},
+	abstract = {Hardware support for deep convolutional neural networks ({CNNs}) is critical to advanced computer vision in mobile and embedded devices. Current designs, however, accelerate generic {CNNs}; they do not exploit the unique characteristics of real-time vision. We propose to use the temporal redundancy in natural video to avoid unnecessary computation on most frames. A new algorithm, activation motion compensation, detects changes in the visual input and incrementally updates a previously-computed activation. The technique takes inspiration from video compression and applies well-known motion estimation techniques to adapt to visual changes. We use an adaptive key frame rate to control the trade-off between efficiency and vision quality as the input changes. We implement the technique in hardware as an extension to state-of-the-art {CNN} accelerator designs. The new unit reduces the average energy per frame by 54\%, 62\%, and 87\% for three {CNNs} with less than 1\% loss in vision accuracy.},
+	eventtitle = {2018 {ACM}/{IEEE} 45th Annual International Symposium on Computer Architecture ({ISCA})},
+	pages = {533--546},
+	booktitle = {2018 {ACM}/{IEEE} 45th Annual International Symposium on Computer Architecture ({ISCA})},
+	author = {Buckler, Mark and Bedoukian, Philip and Jayasuriya, Suren and Sampson, Adrian},
+	urldate = {2024-09-27},
+	date = {2018-06},
+	note = {{ISSN}: 2575-713X},
+	keywords = {Visualization, Prediction algorithms, Computer vision, Hardware, application specific integrated circuits, computer architecture, computer vision, Convolution, convolutional neural networks, hardware acceleration, Motion compensation, Motion estimation, video compression},
+	file = {EVA_Exploiting_Temporal_Redundancy_in_Live_Computer_Vision.pdf:C\:\\Users\\guanxiux\\Zotero\\storage\\YEXYQRQH\\EVA_Exploiting_Temporal_Redundancy_in_Live_Computer_Vision.pdf:application/pdf;IEEE Xplore Abstract Record:C\:\\Users\\guanxiux\\Zotero\\storage\\LVP8JLMG\\8416853.html:text/html;IEEE Xplore Full Text PDF:C\:\\Users\\guanxiux\\Zotero\\storage\\AWQC33ZR\\Buckler 等 - 2018 - EVA² Exploiting Temporal Redundancy in Live Computer Vision.pdf:application/pdf},
+}
+
+@misc{cavigelli_cbinfer_2017,
+	title = {{CBinfer}: Change-Based Inference for Convolutional Neural Networks on Video Data},
+	url = {http://arxiv.org/abs/1704.04313},
+	doi = {10.48550/arXiv.1704.04313},
+	shorttitle = {{CBinfer}},
+	abstract = {Extracting per-frame features using convolutional neural networks for real-time processing of video data is currently mainly performed on powerful {GPU}-accelerated workstations and compute clusters. However, there are many applications such as smart surveillance cameras that require or would benefit from on-site processing. To this end, we propose and evaluate a novel algorithm for change-based evaluation of {CNNs} for video data recorded with a static camera setting, exploiting the spatio-temporal sparsity of pixel changes. We achieve an average speed-up of 8.6x over a {cuDNN} baseline on a realistic benchmark with a negligible accuracy loss of less than 0.1\% and no retraining of the network. The resulting energy efficiency is 10x higher than that of per-frame evaluation and reaches an equivalent of 328 {GOp}/s/W on the Tegra X1 platform.},
+	number = {{arXiv}:1704.04313},
+	publisher = {{arXiv}},
+	author = {Cavigelli, Lukas and Degen, Philippe and Benini, Luca},
+	urldate = {2024-09-28},
+	date = {2017-06-21},
+	eprinttype = {arxiv},
+	eprint = {1704.04313 [cs, eess]},
+	keywords = {Computer Science - Computer Vision and Pattern Recognition, Computer Science - Machine Learning, Electrical Engineering and Systems Science - Image and Video Processing, Computer Science - Artificial Intelligence, Computer Science - Performance},
+	file = {arXiv Fulltext PDF:C\:\\Users\\guanxiux\\Zotero\\storage\\JBSLPTNF\\Cavigelli 等 - 2017 - CBinfer Change-Based Inference for Convolutional Neural Networks on Video Data.pdf:application/pdf;arXiv.org Snapshot:C\:\\Users\\guanxiux\\Zotero\\storage\\XCHFRXSN\\1704.html:text/html},
+}
+
+
+@inproceedings{huynh_deepmon_2017,
+	location = {Niagara Falls New York {USA}},
+	title = {{DeepMon}: Mobile {GPU}-based Deep Learning Framework for Continuous Vision Applications},
+	isbn = {978-1-4503-4928-4},
+	url = {https://dl.acm.org/doi/10.1145/3081333.3081360},
+	doi = {10.1145/3081333.3081360},
+	shorttitle = {{DeepMon}},
+	abstract = {The rapid emergence of head-mounted devices such as the Microsoft Holo-lens enables a wide variety of continuous vision applications. Such applications often adopt deep-learning algorithms such as {CNN} and {RNN} to extract rich contextual information from the ﬁrst-person-view video streams. Despite the high accuracy, use of deep learning algorithms in mobile devices raises critical challenges, i.e., high processing latency and power consumption. In this paper, we propose {DeepMon}, a mobile deep learning inference system to run a variety of deep learning inferences purely on a mobile device in a fast and energy-efﬁcient manner. For this, we designed a suite of optimization techniques to efﬁciently ofﬂoad convolutional layers to mobile {GPUs} and accelerate the processing; note that the convolutional layers are the common performance bottleneck of many deep learning models. Our experimental results show that {DeepMon} can classify an image over the {VGG}-{VeryDeep}-16 deep learning model in 644ms on Samsung Galaxy S7, taking an important step towards continuous vision without imposing any privacy concerns nor networking cost.},
+	eventtitle = {{MobiSys}'17: The 15th Annual International Conference on Mobile Systems, Applications, and Services},
+	pages = {82--95},
+	booktitle = {Proceedings of the 15th Annual International Conference on Mobile Systems, Applications, and Services},
+	publisher = {{ACM}},
+	author = {Huynh, Loc N. and Lee, Youngki and Balan, Rajesh Krishna},
+	urldate = {2024-09-28},
+	date = {2017-06-16},
+	langid = {english},
+	file = {PDF:C\:\\Users\\guanxiux\\Zotero\\storage\\TQCMRE88\\Huynh 等 - 2017 - DeepMon Mobile GPU-based Deep Learning Framework for Continuous Vision Applications.pdf:application/pdf},
+}
+
+
 
 
