@@ -173,7 +173,7 @@ Tab.~\ref{abl} shows the ablation study of CacheInf.
 We disabled offloading in CacheInf-Local and disabled partial recomputation in CacheInf-Full (only execute full recomputation) and execute the same experiments in Kapao.
 Both cases caused the performance gain to degrade, and disabling offloading caused the performance gain to degrade in a greater extend, which implies that an important portion of CacheInf's gain comes from transmission data volume reduction.
 The reason of this is twofold: 1. the computation power of the robot is evidently weaker than the GPU server; 2. the computation time reduction is not proportional to the size of the input image, resulting in sub-optimal scheduling.
-However, CacheInf-Local still evidently reduced inference time compared to the simple local computation cases in Tab.~\ref{fig:end2end}, indicating the advantages of partial recomputation mechanism in CacheInf.
+However, CacheInf-Local still evidently reduced inference time compared to the simple local computation cases in Fig.~\ref{fig:end2end}, indicating the advantages of partial recomputation mechanism in CacheInf.
 
 % \begin{table*}[htb]
     
