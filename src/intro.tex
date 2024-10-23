@@ -1,5 +1,5 @@
 Visual information is vital for various robotic tasks deployed on mobile edge devices (mobile robots), such as navigation~\cite{ran2017convolutional}, manipulation~\cite{bayar2018constrained}, and human-robot interaction~\cite{wu2019weight};
-and as a major visual information processing method, fast, accurate and energy-efficient visual model inference is important for the robotic tasks to timely respond to environment changes. 
+and as a major visual information processing method, fast, accurate and energy-efficient visual model inference (typically convolution neural networks~\cite{kapao,targ2016resnet,woo2023convnext}) is important for the robotic tasks to timely respond to environment changes. 
 Unfortunately, the mobile robot typically has limited computational power and limited and unstable wireless network bandwidth~\cite{yang2022mobile}, which slow down the inference speed via both local computation (complete all inference calculations on the edge device itself) and computation offloading (offload the calculations to remote GPU servers).
 Thus the mobile robot often suffers the problem of slow visual model inference that interferes the robotic task performance (e.g., 1.xx seconds in human pose estimation~\cite{kapao} or 2.xx seconds in surrounding occlusion prediction~\cite{agrnav}) and the prolonged inference latency naturally increases energy consumption each inference.
 % Unfortunately, the mobile robot typically has limited computational power and limited and unstable wireless network bandwidth~\cite{yang2022mobile}, which slow down both local computation on the mobile robot and naive offloading of computation to GPU servers.
@@ -20,6 +20,11 @@ To cope with this situation, the above methods can only either ignore certain re
 As a result, existing caching mechanisms that involve deciding whether to reuse or recompute the activations struggle to achieve a balance between inference accuracy and inference speed which can only optimize either inference speed or accuracy while sacrificing the other, regardless of whether they adopt local computation or computation offloading.
 % When camera perspective moves, possibly new scenes or changed occlusion cause the consecutive images to differ in a way that cannot be covered by receptive field movements, and such changes happen on a small portion (e.g., 5\%) of the pixels on the input image will cause a larger portion (e.g., 25\%) of pixels on the activations to change, because the receptive fields are often larger than a pixel (e.g., 20X20) and overlap.
 % Simply introducing such caching mechanism seems able to accelerate both local computation and computation offloading by either skipping local activation computation or only necessitating the transmission of the recognized movements of receptive fields during computation offloading. But we 
+% \begin{figure}
+%     \includegraphics[width=0.5\linewidth]{fig/insight.drawio.png}
+%     \caption[short]{Receptive fields and their dominated pixels on the activations.}
+%     \label{fig:receptive field}
+% \end{figure}
 
 The key reason for the dilemma faced by existing caching methods is that they involve deciding whether to reuse or recompute the activations at the granularity of the whole input frame, which lacks a tradeoff space between inference accuracy and speed.
 % The key reason to their dilemma is that while reusing or recomputing the activations optimizes the inference speed or accuracy and sacrifices the opposite, there lacks a tradeoff method between inference accuracy and speed.
@@ -77,11 +82,19 @@ To bridge this gap, in this paper, we propose CacheInf, a high-performance colla
 Given a continuous stream of visual input in a robotic visual task, CacheInf selectively reuses a portion of the cached activations of a reference frame while recomputes the rest based on statistical metrics such as the mean square error of pixels in corresponding receptive fields between the reference frame and the current frame.
 In this way, the amount of required computation is minimized which accelerates both local computation and computation offloading and the error accumulation in activations is mitigated, achieving the optimal tradeoff between inference accuracy and inference speed for collaborative edge-cloud visual model inference on the mobile robot.
 
-The first challenge of the the design of CacheInf is to minimize computation using cache mechanism without compromising the inference accuracy.
-While prioritizing recomputation on receptive fields with most difference is intuitively effective, we also notice under the same level of difference between consecutive images, if we choose to cache the activations computed by an operator closer to the input image (former), the portion of activations needed to be recomputed would be reduced.
-This is because the former operators have smaller receptive fields compared with the latter ones whose activations are less affected by difference across images, but there are more operators after the cached operator whose computation are not skipped.
+% The first challenge of the design of CacheInf is how to distinguish the parts of the input image to recompute and update the activations so that we can maintain high inference accuracy.
+% When perspective changes along a video stream are involved, the appearance of the background, besides the targeted objects, will gradually change, disabling the traditional appearance based metrics such as mean square error between corresponding pixel blocks.
+% We propose to use the variance 
 
-Based on these observations, we design a mechanism in CacheInf to both selectively and adaptively choose the operator to cache its computed activations and the portion of activations to be recomputed according to the levels of difference across input images detected and the amount of possible computation reduction, achieving maximal computation reduction while maintaining high inference accuracy.
+The first challenge of the the design of CacheInf is to minimize computation using cache mechanism without compromising the inference accuracy.
+While prioritizing recomputation on receptive fields with most appearance difference seems effective, the background also gradually changes in appearance along a video stream with perspective changes, which attracts wasteful recomputation on these areas.
+We observe that a moving targeted object tend to have different movements compared with the background (otherwise it is stationary and the corresponding cached activations can be directly reused).
+Thus, instead of appearance-based metrics, we analyze the movements of the sub-pixel blocks of a receptive field (internal movements) and prioritize the recomputation on receive fields with highest variance in internal movements, reducing unnecessary computation while maintaining high inference accuracy.
+
+%  we also notice under the same level of difference between consecutive images, if we choose to cache the activations computed by an operator closer to the input image (former), the portion of activations needed to be recomputed would be reduced.
+% This is because the former operators have smaller receptive fields compared with the latter ones whose activations are less affected by difference across images, but there are more operators after the cached operator whose computation are not skipped.
+
+% Based on these observations, we design a mechanism in CacheInf to both selectively and adaptively choose the operator to cache its computed activations and the portion of activations to be recomputed according to the levels of difference across input images detected and the amount of possible computation reduction, achieving maximal computation reduction while maintaining high inference accuracy.
 
 The second challenge is to minimize the overall inference latency considering the interaction between the mobile robot and the GPU server.
 One major obstacle is that switching between local computation and computation offloading under the caching mechanism (e.g., when wireless network bandwidth changes) typically requires costly one full local recomputation or full transmission of the input image, and such cost hinders a greedy scheduling method from adopting such switching to gain further overall acceleration.
