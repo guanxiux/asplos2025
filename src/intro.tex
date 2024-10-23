@@ -105,7 +105,7 @@ For the tail cases where we need to fully offload an input image to the GPU serv
 Our baselines include HP, a state-of-the-art cache-based computation reduction methods called EVA2~\cite{buckler_eva_2018}, EVA2 integrated with HP and local computation.
 We evaluated CacheInf on a four-wheel robot equipped with a Jetson NX Xavier~\cite{jetsonnx} that is capable of computing locally with its low-power-consumption GPU.
 The offloading GPU server is a PC equipped with an Nvidia 2080ti GPU.
-Our datasets include the standard datasets of video frames of DAVIS~\cite{Perazzi2016} and CAD~\cite{Choi_VSWS_2009} each captured by a handheld camera and our self-captured video frames using sensors on our robot.
+Our datasets include the standard datasets of video frames of DAVIS~\cite{Perazzi2016} captured by a handheld camera and our self-captured video frames using sensors on our robot.
 Extensive evaluation over various visual models~\cite{kapao,agrnav,noauthor_torchvision_nodate} and wireless network bandwidth circumstances shows that:
 \begin{itemize}
     \item CacheInf is fast and accurate. Among the baselines that maintains high accuracy, CacheInf reduced the end-to-end inference time by 34.29\% to 74.26\% with only 3.43\% to 4.12\% accuracy reduction.

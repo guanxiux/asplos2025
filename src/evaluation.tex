@@ -464,3 +464,9 @@ However, CacheInf-Local still evidently reduced inference time compared to the s
 % From the above results we can learn that CacheInf is fundamentally trading-off between GPU memory with inference latency, just as systems in other domains with cache enabled.
 % Since the resulting increased GPU memory consumption may be unfavorable for devices with tight memory budget, adjusting such trade-off to further reduce extra GPU memory consumption to fit in these devices will be our future work.
 % Another limitation of CacheInf is that it relies on continuity of input and thus is unsuitable for scenarios where the perspective of the robot changes dramatically.
+
+\subsection{Discussion}
+While CacheInf ultimately reduced inference latency and energy consumption while maintaining high inference accuracy, it is still fundamental trading off between inference latency and inference accuracy which can be seen from the slightly degraded inference accuracy.
+This is a common limitation of the cache-based visual model inference acceleration methods and such mild inference accuracy degradation is not likely to degrade the application performance.
+Besides, with the limitation of pixel block matching algorithms, in extreme situations there could be no detected reusable area on the input image and in this case CacheInf will degrade to full recomputation with the selected recomputation area expand to the whole size of the image.
+As for future work, we are planning to evaluate the performance of CacheInf in a broader range of datasets, environments and visual models to further examine its performance.
