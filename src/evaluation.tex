@@ -102,7 +102,7 @@ The evaluation questions are as follows:
 \end{figure}
 
 
-\subsection{End-to-End Performance on Real-World Applications}
+\subsection{End-to-End Performance}
 
 \begin{figure}[htp]
     \centering
@@ -133,9 +133,47 @@ In contrast, the ability of CacheInf to reuse cached activations whose receptive
 
 \subsection{Breakdown}
 
+\begin{table}[htb]
+    \begin{tabular}{c|c|c}
+        \toprule
+        System & MSE & Recomputation Ratio\\
+        \midrule
+        CacheInf & 22022.6 & 34.6\% \\ 
+        EVA2(L)-HP & 22792.4 & 95.3\% \\ 
+        EVA2(H)-HP & 22785.4  & 3.4\% \\ 
+        \bottomrule
 
+    \end{tabular}
+    \caption[sample rates]{The average observed MSE of different cache-based systems and the ratio of recomputation in Kapao}
+    \label{mse}
+\end{table}
+Tab.~\ref{mse} presents the average observed MSE of the small pixel blocks when applying the block matching algorithm in the Kapao application.
+We mark the recomputation ratio as the ratio of size of the input fed to the inference pipeline for each inference.
+For reusing or recomputing cases in EVA2, recomputation ratio is 0. or 1.
+We can observe that all the systems observed high level of MSE during the inference (note that the pixel value in our experiment ranges from 0 to 255) while three systems apply different strategies: EVA2(L)-HP almost recomputes on every input image due to the frequent triggering of the MSE threshold while EVA2(H)-HP almost never recomputes.
+There could be a tradeoff threshold that helps EVA2 integrated with HP to achieve a medium performance between EVA2(L)-HP and EVA2(H)-HP; however, a such threshold would most likely results in degradation in both inference latency and inference accuracy.
+CacheInf endured this high level of MSE and managed to only compute on the partially selected shard of the input image, which reduced inference latency while maintaining high inference accuracy.
 
+\subsection{Ablation Study}
+\begin{table}[htb]
+    \begin{tabular}{c|c|c}
+        \toprule
+        System & Inference Latency (s) & Energy Consumption (J)\\
+        \midrule
+        CacheInf & 0.26 & 1.84 \\ 
+        CacheInf-Local & 0.76 & 6.34 \\ 
+        CacheInf-Full & 0.56  & 3.43 \\ 
+        \bottomrule
 
+    \end{tabular}
+    \caption[sample rates]{The inference latency and energy consumption of CacheInf when disabling offloading (CacheInf-Local) and partial recomputation (CacheInf-Full) in Kapao}
+    \label{abl}
+\end{table}
+Tab.~\ref{abl} shows the ablation study of CacheInf.
+We disabled offloading in CacheInf-Local and disabled partial recomputation in CacheInf-Full (only execute full recomputation) and execute the same experiments in Kapao.
+Both cases caused the performance gain to degrade, and disabling offloading caused the performance gain to degrade in a greater extend, which implies that an important portion of CacheInf's gain comes from transmission data volume reduction.
+The reason of this is twofold: 1. the computation power of the robot is evidently weaker than the GPU server; 2. the computation time reduction is not proportional to the size of the input image, resulting in sub-optimal scheduling.
+However, CacheInf-Local still evidently reduced inference time compared to the simple local computation cases in Tab.~\ref{fig:end2end}, indicating the advantages of partial recomputation mechanism in CacheInf.
 
 % \begin{table*}[htb]
     
@@ -165,15 +203,15 @@ In contrast, the ability of CacheInf to reuse cached activations whose receptive
 %     %\vspace{-0.7cm}
 % \end{table*}
 
-Table~\ref{tab:e2e_time} shows the inference latency and the ratio that transmission time takes up the inference latency and compared with the baselines (we include results of local computation for comparison, referred to as Local), CacheInf reduced inference latency by 35.5\% to 44.4\% indoors and 29.4\% to 40.0\% outdoors for Kapao and 30.0\% to 48.8\% indoors and 24.2\% to 46.8\% outdoors for AGRNav.
-Compared with HP, while CacheInf reduced transmission time by 6 to 8 ms, CacheInf further reduced inference latency by 8 to 10 ms, confirming the effectiveness of the acceleration of the used sparse local operators.
-CacheInf's highest percentage that transmission time takes up the inference latency across all cases shows that with shrunk transmission data volume with cache enabled and the integration of HP, CacheInf tend to offload computation to the GPU server more often.
-This can also be validated by the increased transmission time and reduced inference latency of DSCCS-C compared with DSCCS.
+% Table~\ref{tab:e2e_time} shows the inference latency and the ratio that transmission time takes up the inference latency and compared with the baselines (we include results of local computation for comparison, referred to as Local), CacheInf reduced inference latency by 35.5\% to 44.4\% indoors and 29.4\% to 40.0\% outdoors for Kapao and 30.0\% to 48.8\% indoors and 24.2\% to 46.8\% outdoors for AGRNav.
+% Compared with HP, while CacheInf reduced transmission time by 6 to 8 ms, CacheInf further reduced inference latency by 8 to 10 ms, confirming the effectiveness of the acceleration of the used sparse local operators.
+% CacheInf's highest percentage that transmission time takes up the inference latency across all cases shows that with shrunk transmission data volume with cache enabled and the integration of HP, CacheInf tend to offload computation to the GPU server more often.
+% This can also be validated by the increased transmission time and reduced inference latency of DSCCS-C compared with DSCCS.
 
-The reduced inference latency of CacheInf leads to reduction of energy consumed per inference by 25.2\% to 34.3\% indoors and 21.2\% to 34.0\% outdoors for Kapao and 27.4\% to 35.7\% indoors and 21.7\% to 39.9\% outdoors for AGRNav, as shown in Table~\ref{tab:e2e_power}, while the runtime power consumption was increased due to higher frequency of inference.
+% The reduced inference latency of CacheInf leads to reduction of energy consumed per inference by 25.2\% to 34.3\% indoors and 21.2\% to 34.0\% outdoors for Kapao and 27.4\% to 35.7\% indoors and 21.7\% to 39.9\% outdoors for AGRNav, as shown in Table~\ref{tab:e2e_power}, while the runtime power consumption was increased due to higher frequency of inference.
 
-We report the peak GPU memory consumption on the robot under different strategy in Table~\ref{tab:e2e_mem}: CacheInf (includes both the systems of CacheInf and DSCCS-C), No Cache (includes local computation and HP) and Cache All (a naive strategy that caches the output of every layer).
-The results show that CacheInf increased peak GPU memory consumption by 64.6\% for Kapao and 58.5\% for AGRNav compared with no cache, which is however 72.2\% and 81.6\% lower than the cases of Cache All, demonstrating the effectiveness of CacheInf's strategy to reduce the number cached operators.
+% We report the peak GPU memory consumption on the robot under different strategy in Table~\ref{tab:e2e_mem}: CacheInf (includes both the systems of CacheInf and DSCCS-C), No Cache (includes local computation and HP) and Cache All (a naive strategy that caches the output of every layer).
+% The results show that CacheInf increased peak GPU memory consumption by 64.6\% for Kapao and 58.5\% for AGRNav compared with no cache, which is however 72.2\% and 81.6\% lower than the cases of Cache All, demonstrating the effectiveness of CacheInf's strategy to reduce the number cached operators.
 
 
 % \begin{table}[htb]
@@ -346,64 +384,64 @@ The results show that CacheInf increased peak GPU memory consumption by 64.6\% f
 %     %\vspace{-0.8cm}
 % \end{table}
 
-\subsection{Micro-Event}
-We first present the micro-events about the real-time inference latency of Kapao of different systems under fluctuating bandwidth in Figure~\ref{fig:micro_e2e}.
-And we can learn that CacheInf consistently achieved the lowest inference latency among all the systems and the gain was most significant under lower bandwidth.
-Then we fixed the wireless network bandwidth to 48Mb/s and examined different systems's performance at varied cache ratios from a sequence of video images in Figure~\ref{fig:micro_ratio}: at high cache ratios, CacheInf dramatically reduced inference latency compared with other baselines; at low cache ratios, CacheInf degraded to Hybrid-Parallel or even slightly increased inference latency compared with Hybrid-Parallel, and the reason could be the overhead to analyze reusable cache and update cache.
-We can also observe when cache ratios fluctuated, the inference latency of CacheInf was more stable than DSCCS-C, which can be attributed to CacheInf's ability to adjust input ratio ($x$) to reduce inference latency.
+% \subsection{Micro-Event}
+% We first present the micro-events about the real-time inference latency of Kapao of different systems under fluctuating bandwidth in Figure~\ref{fig:micro_e2e}.
+% And we can learn that CacheInf consistently achieved the lowest inference latency among all the systems and the gain was most significant under lower bandwidth.
+% Then we fixed the wireless network bandwidth to 48Mb/s and examined different systems's performance at varied cache ratios from a sequence of video images in Figure~\ref{fig:micro_ratio}: at high cache ratios, CacheInf dramatically reduced inference latency compared with other baselines; at low cache ratios, CacheInf degraded to Hybrid-Parallel or even slightly increased inference latency compared with Hybrid-Parallel, and the reason could be the overhead to analyze reusable cache and update cache.
+% We can also observe when cache ratios fluctuated, the inference latency of CacheInf was more stable than DSCCS-C, which can be attributed to CacheInf's ability to adjust input ratio ($x$) to reduce inference latency.
 
-\begin{figure}[htb]
-    %\vspace{-0.3cm}
-    \includegraphics[width=\linewidth]{fig/MicroEvent2.png}
-    %\vspace{-0.3cm}
-    \caption[short]{Kapao: inference latency of different systems at different wireless network bandwidth.}
-    \label{fig:micro_e2e}
-    %\vspace{-0.3cm}
-\end{figure}
+% \begin{figure}[htb]
+%     %\vspace{-0.3cm}
+%     \includegraphics[width=\linewidth]{fig/MicroEvent2.png}
+%     %\vspace{-0.3cm}
+%     \caption[short]{Kapao: inference latency of different systems at different wireless network bandwidth.}
+%     \label{fig:micro_e2e}
+%     %\vspace{-0.3cm}
+% \end{figure}
 
 
-\begin{figure}[htb]
-    %\vspace{-0.3cm}
-    \includegraphics[width=\linewidth]{fig/MicroEvent3.png}
-    %\vspace{-0.3cm}
-    \caption[short]{Kapao: inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
-    \label{fig:micro_ratio}
-    %\vspace{-0.3cm}
-\end{figure}
+% \begin{figure}[htb]
+%     %\vspace{-0.3cm}
+%     \includegraphics[width=\linewidth]{fig/MicroEvent3.png}
+%     %\vspace{-0.3cm}
+%     \caption[short]{Kapao: inference latency of different systems at different cached ratio with fixed wireless network bandwidth.}
+%     \label{fig:micro_ratio}
+%     %\vspace{-0.3cm}
+% \end{figure}
 
-\subsection{Sensitivity}
+% \subsection{Sensitivity}
 
-\begin{table}[htb]
-    %\vspace{-0.3cm}
-    \begin{tabular}{c|c|c|c|c}
-        \toprule
-        \multirow[c]{2}{*}{Model} & \multirow[c]{2}{*}{Statistics} & \multicolumn{3}{c}{N} \\
-        \cline{3-5}
-        & & 0.1 & 0.2 & 0.3 \\
-        \midrule
-        \multirow[c]{2}{*}{Kapao} & Inference Latency/s & 0.20 & 0.18 & 0.17\\
-        \cline{2-5}
-            & accuracy (AP) & 75.8 & 74.6 & 72.5 \\
-        \hline
-        \multirow[c]{2}{*}{AGRNav} & Inference Latency/s & 0.21 & 0.19 & 0.17 \\
-        \cline{2-5}
-            & accuracy (F1) & 98.9 & 98.5 & 98.4\\
-        \hline
-        \multirow[c]{2}{*}{ConvNeXt} & Inference Latency/ms & 44.7 & 38.6 & 34.8\\
-        \cline{2-5}
-            & accuracy (Acc@1) & 100.0 & 100.0 & 99.2 \\
-        \bottomrule
-    \end{tabular}
-    \caption[accuracy]{How different difference filtering threshold (N) for identifying reusable cache affects the inference latency of CacheInf indoors and the accuracy of visual models.}
-    %\vspace{-0.8cm}
-    \label{tab:sensitvity}
-\end{table}
+% \begin{table}[htb]
+%     %\vspace{-0.3cm}
+%     \begin{tabular}{c|c|c|c|c}
+%         \toprule
+%         \multirow[c]{2}{*}{Model} & \multirow[c]{2}{*}{Statistics} & \multicolumn{3}{c}{N} \\
+%         \cline{3-5}
+%         & & 0.1 & 0.2 & 0.3 \\
+%         \midrule
+%         \multirow[c]{2}{*}{Kapao} & Inference Latency/s & 0.20 & 0.18 & 0.17\\
+%         \cline{2-5}
+%             & accuracy (AP) & 75.8 & 74.6 & 72.5 \\
+%         \hline
+%         \multirow[c]{2}{*}{AGRNav} & Inference Latency/s & 0.21 & 0.19 & 0.17 \\
+%         \cline{2-5}
+%             & accuracy (F1) & 98.9 & 98.5 & 98.4\\
+%         \hline
+%         \multirow[c]{2}{*}{ConvNeXt} & Inference Latency/ms & 44.7 & 38.6 & 34.8\\
+%         \cline{2-5}
+%             & accuracy (Acc@1) & 100.0 & 100.0 & 99.2 \\
+%         \bottomrule
+%     \end{tabular}
+%     \caption[accuracy]{How different difference filtering threshold (N) for identifying reusable cache affects the inference latency of CacheInf indoors and the accuracy of visual models.}
+%     %\vspace{-0.8cm}
+%     \label{tab:sensitvity}
+% \end{table}
 
-With higher difference filtering threshold ($N$), CacheInf will mark cached computation result for areas with more difference as reusable, and we present its influence on the accuracy performance of the selected representative visual models in Table~\ref{tab:sensitvity}.
-We used the output of the same model with the same input under local computation as the groundtruth to compute accuracy.
-Each model has a different accuracy metric: AP stands for average precision for people detection for Kapao; F1 examines the portion of points in a point cloud that is close to the groundtruth; Acc@1 is the percentage of the predicted classification results matching with the groundtruth.
-From Table~\ref{tab:sensitvity} we can learn that loosening the constraint of cache identification by increasing $N$ slightly decreased accuracy of visual models, with the advantage of further reduced inference latency.
-And for visual models with pixel level output (e.g., predicted people pose of Kapao and predicted point cloud of AGRNav), such influence will be perceptible, while it does not significantly affect the accuracy of the visual models with comprehensive output (e.g., classification results of ConvNeXt).
+% With higher difference filtering threshold ($N$), CacheInf will mark cached computation result for areas with more difference as reusable, and we present its influence on the accuracy performance of the selected representative visual models in Table~\ref{tab:sensitvity}.
+% We used the output of the same model with the same input under local computation as the groundtruth to compute accuracy.
+% Each model has a different accuracy metric: AP stands for average precision for people detection for Kapao; F1 examines the portion of points in a point cloud that is close to the groundtruth; Acc@1 is the percentage of the predicted classification results matching with the groundtruth.
+% From Table~\ref{tab:sensitvity} we can learn that loosening the constraint of cache identification by increasing $N$ slightly decreased accuracy of visual models, with the advantage of further reduced inference latency.
+% And for visual models with pixel level output (e.g., predicted people pose of Kapao and predicted point cloud of AGRNav), such influence will be perceptible, while it does not significantly affect the accuracy of the visual models with comprehensive output (e.g., classification results of ConvNeXt).
 
 
 
@@ -422,7 +460,7 @@ And for visual models with pixel level output (e.g., predicted people pose of Ka
 %     \caption[sample rates]{How the sampling rate of video frames influence the performance of CacheInf.}
 % \end{table*}
 
-\subsection{Discussion}
-From the above results we can learn that CacheInf is fundamentally trading-off between GPU memory with inference latency, just as systems in other domains with cache enabled.
-Since the resulting increased GPU memory consumption may be unfavorable for devices with tight memory budget, adjusting such trade-off to further reduce extra GPU memory consumption to fit in these devices will be our future work.
-Another limitation of CacheInf is that it relies on continuity of input and thus is unsuitable for scenarios where the perspective of the robot changes dramatically.
+% \subsection{Discussion}
+% From the above results we can learn that CacheInf is fundamentally trading-off between GPU memory with inference latency, just as systems in other domains with cache enabled.
+% Since the resulting increased GPU memory consumption may be unfavorable for devices with tight memory budget, adjusting such trade-off to further reduce extra GPU memory consumption to fit in these devices will be our future work.
+% Another limitation of CacheInf is that it relies on continuity of input and thus is unsuitable for scenarios where the perspective of the robot changes dramatically.
