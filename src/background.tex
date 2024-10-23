@@ -47,4 +47,12 @@ Hybrid-Parallel~\cite{sun2024hybridparallel} further offers a more fine-grained 
 It enhances parallelism and further accelerates inference. 
 However, despite the advancements in these offloading techniques, the limited bandwidth still poses a bottleneck for data transmission, which our caching mechanism effectively mitigates and achieves a significant improvement in inference performance.
 
+Existing caching methods (e.g., EVA2~\cite{cavigelli_cbinfer_2017}, DeepCache~\cite{xu2018deepcache}) designed for real-time vision tasks on edge devices leverage temporal redundancy in video streams to avoid unnecessary computation on most frames. 
+EVA2 proposes a new algorithm called activation motion compensation, which adapts to visual changes by detecting changes in the visual input and incrementally updating previously computed activations. 
+DeepCache, on the other hand, discovers temporal locality at the input of the model by exploiting the video's internal structure and propagates regions of reusable results into the model's internal structure. 
+However, despite their achievements in accelerating inference, these methods face a trade-off between inference accuracy and speed. 
+They must either compromise on accuracy by ignoring certain recognition failures or sacrifice inference speed by frequently executing full local computation or transmitting entire input images during computation offloading.
+Moreover, these algorithms are designed for fixed-position devices with a stationary perspective (e.g., smart cameras), where the primary changes in the input images are due to object movement (e.g., people, vehicles). 
+In contrast, mobile robot scenarios introduce additional challenges as the background also changes due to perspective shifts, leading to more frequent triggering of full local computation in these methods and further exacerbating the challenge of striking an optimal balance between accuracy and speed.
+
 % Cache related (Guan will take it)
