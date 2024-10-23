@@ -8,9 +8,9 @@ systems = ["Local", "EVA2(L)","HP","EVA2(H)-HP","EVA2(L)-HP","CacheInf"]
 # KAPAO
 model = "KAPAO"
 Latency = {"Local":1.01, "HP":0.41, "EVA2(L)": 0.95,
-           "EVA2(H)-HP": 0.42, "EVA2(L)-HP": 0.15, "CacheInf": 0.26, }
+           "EVA2(H)-HP": 0.15, "EVA2(L)-HP": 0.42, "CacheInf": 0.26, }
 Latency_std = {"Local":0.03,"HP":0.35, "EVA2(L)": 0.01,
-               "EVA2(H)-HP": 0.32,"EVA2(L)-HP":0.12,"CacheInf": 0.22}
+               "EVA2(H)-HP": 0.12,"EVA2(L)-HP":0.12,"CacheInf": 0.22}
 Energy_cost = {"Local":9.79, "HP":2.68, "EVA2(L)": 9.54,
                "EVA2(H)-HP": 1.22,"EVA2(L)-HP":2.57,"CacheInf": 1.84}
 Energy_cost_std = {"Local":0.03, "HP":1.01, "EVA2(L)": 0.02,
@@ -22,10 +22,10 @@ Accuracy = {"Local":1, "HP":1, "EVA2(L)": 0.96,
 model = "AGRNav"
 Latency = {"Local":0.60, "HP":0.35, "EVA2(L)": 0.50,
            "EVA2(H)-HP": 0.13, "EVA2(L)-HP": 0.34, "CacheInf": 0.23, }
-Latency_std = {"Local":0.03,"HP":0.35, "EVA2(L)": 0.01,
+Latency_std = {"Local":0.03,"HP":0.21, "EVA2(L)": 0.01,
                "EVA2(H)-HP": 0.08,"EVA2(L)-HP":0.12,"CacheInf": 0.22}
 Energy_cost = {"Local":4.86, "HP":2.68, "EVA2(L)": 4.83,
-               "EVA2(H)-HP": 2.62,"EVA2(L)-HP":1.68,"CacheInf": 2.04}
+               "EVA2(H)-HP": 1.68,"EVA2(L)-HP":2.62,"CacheInf": 2.04}
 Energy_cost_std = {"Local":0.03, "HP":1.01, "EVA2(L)": 0.02,
                "EVA2(H)-HP": 1.25,"EVA2(L)-HP":0.87,"CacheInf": 1.35}
 Accuracy = {"Local":1, "HP":1, "EVA2(L)": 0.96,

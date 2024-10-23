@@ -104,6 +104,39 @@ The evaluation questions are as follows:
 
 \subsection{End-to-End Performance on Real-World Applications}
 
+\begin{figure}[htp]
+    \centering
+    \subfloat[Latency of KAPAO\label{fig:kapao-latency}]{\includegraphics[width=0.5\linewidth]{fig/end2end/latency_KAPAO.pdf}}
+    \subfloat[Latency of AGRNav\label{fig:agrnav-latency}]{\includegraphics[width=0.5\linewidth]{fig/end2end/latency_AGRNav.pdf}}
+    \vfil
+    \vspace{-0.4cm}
+    \subfloat[Energy Cost of KAPAO\label{fig:kapao-energy}]{\includegraphics[width=0.5\linewidth]{fig/end2end/energy_KAPAO.pdf}}
+    \subfloat[Energy Cost of AGRNav\label{fig:agrnav-energy}]{\includegraphics[width=0.5\linewidth]{fig/end2end/energy_AGRNav.pdf}}
+    \vfil
+    \vspace{-0.4cm}
+    \subfloat[Accuracy of KAPAO\label{fig:kapao-accuracy}]{\includegraphics[width=0.5\linewidth]{fig/end2end/accuracy_KAPAO.pdf}}
+    \subfloat[Accuracy of AGRNav\label{fig:agrnav-accuracy}]{\includegraphics[width=0.5\linewidth]{fig/end2end/accuracy_AGRNav.pdf}}
+    \caption{The performance of KAPAO and AGRNav on various systems.}
+    \label{fig:end2end} 
+\end{figure}
+
+Fig.~\ref{fig:end2end} shows the end-to-end statistics of inference latency, energy consumption per inference and inference accuracy.
+As for inference accuracy, we use the inference results of local computation as the groundtruth to collect inference accuracy for the other items and normalized the inference accuracy against the accuracy.
+From Fig.~\ref{fig:end2end}, we can learn that CacheInf greatly reduces end-to-end inference latency and energy consumption per inference while maintaining high accuracy.
+Among the baselines that preserve high inference accuracy, CacheInf reduced the inference latency by 36.59\% to 74.26\% for Kapao and 34.29\% to 61.67\% for AGRNav;
+CacheInf reduced the energy consumption per inference by 28.41\% to 81.21\% for Kapao and 23.89\% to 58.02\% for AGRNav.
+While EVA2(H) greatly reduced inference latency and energy consumption, the lowered accuracy makes it unusable for real-world applications.
+
+EVA2(L) and EVA2(L)-HP each achieved similar performance as local computation and HP, which indicates that the high MSE due to perspective changes makes direct cached activation reuse impossible and the frequent triggering of recomputation.
+In these cases, the overhead of cache analysis computation outweighs the possible gain of rare reusing and caused almost no gain compared with wholly local computation and wholly offloading, which makes EVA2(L)-HP even incurred high inference latency than the pure offloading method of HP.
+In contrast, the ability of CacheInf to reuse cached activations whose receptive fields contain less new information (less internal variance) and partially recomputes the others with more new information (high internal variance) enables it to reduce inference latency while maintaining high inference accuracy across these applications.
+
+\subsection{Breakdown}
+
+
+
+
+
 % \begin{table*}[htb]
     
 %     %\vspace{-0.3cm}
