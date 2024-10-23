@@ -11,7 +11,7 @@ The robot itself is equipped with low-power-consumption gpu to perform slow and 
     %\vspace{-0.2cm}
     \includegraphics[width=\linewidth]{fig/overview_new_new.drawio.pdf}
     %\vspace{-0.2cm}
-    \caption[track]{Architecture and workflow of CacheInf.}
+    \caption[track]{Architecture and workflow of CacheInf. }
     \label{fig:overview}
     %\vspace{-0.3cm}
 \end{figure*}
@@ -21,6 +21,7 @@ The robot itself is equipped with low-power-consumption gpu to perform slow and 
 CacheInf consists of four major components: Collaborative Offload Scheduler, Cache Analyzer, Cache Combiner, and Recomputation Input Constructor.
 Figure~\ref{fig:overview} describes the runtime workflow of CacheInf.
 Collaborative Offload Scheduler functions both at the initialization stage and at runtime and we exclude the initialization stage in Figure~\ref{fig:overview} for simplicity.
+For simplicity, we call the Recomputation Input Constructor and Cache Combiner for activations together with the visual model inference pipeline as the CacheInf Executor which resides on both the robot and the GPU server.
 
 \subsubsection{Collaborative Offload Scheduler}
 During the initialization stage of the robotic task and CacheInf is granted access to a visual model and an initial input image.
@@ -40,7 +41,7 @@ The rearrangement can also be triggered when extreme conditions are detected, su
 \end{figure}
 Given a new input image, Cache Analyzer contrast it with the cached input image to find the movements of the receptive fields of the cached activations.
 Since the receptive fields of different pixels on the activations often overlaps as shown in Fig.~\ref{fig:receptive field}, we first divide the whole input image into different small pixel blocks and calculate the movements of each pixel blocks (represented by motion vectors) via pixel block matching.
-The movements of the pixel blocks are then combined into the movements of the receptive fields.
+The movements of the pixel blocks within a receptive field are then averaged as the movement of the receptive field.
 This process is similar to the motion detection process of the modern video encoding, but we decided not to leverage the existing video encoder to accelerate this process, since it incurs other calculation for video encoding that is unnecessary for our system and brings extra overhead.
 We also turn down other solutions in embedded systems~\cite{buckler_eva_2018} since they require specially designed hardwares.
 Instead, we leverage the onboard GPU where we implement a CUDA-accelerated pixel block matching algorithm (three-step block matching algorithm) to accelerate this process and the computation is lightweight (execution time estimated to be around 2 to 3 ms) compared with the visual model inference.

@@ -1,7 +1,3 @@
-We implemented CacheInf with python, pytorch~\cite{paszke2017automatic} and taichi~\cite{taichi} on Ubuntu20.04.
-The communication library used is the distributed module~\cite{torch_distributed} of pytorch with mpi backend.
-We compiled pytorch with cuda-aware mpi enabled so that the mpi backend can directly read and write to cuda buffer to minimize communication overhead.
-We use mpi backend instead of the popular nccl backend because nccl is unavailable on the Jetson robot we used due to structural limitation~\cite{noauthor_can_2022}.
-
-The sparse local operators were implemented based on the bitmasked sparse nodes in taichi~\cite{taichi}, which efficiently manages the sparse pixels in a grid and preserves the spatial structure of the sparse pixels by organizing the them in a tree structure. 
-With the spatial structure preserved, common optimization methods for cuda operators based on computation locality such as block shared memory~\cite{noauthor_using_2013} can be introduced to accelerate computation; our implemented sparse local operators achieved comparable performance with the original pytorch operators with the same input size.
+We implemented CacheInf with python, pytorch~\cite{paszke2017automatic} and C++ CUDA~\cite{cuda} on Ubuntu20.04.
+The major components of CacheInf, namely Cache Analyzer, Cache Combiner and Recomputation Input Constructor are implemented via highly optimized CUDA programming and exposed as python extensions for easy to use.
+We recorded that executing these components on our edge robot equipped with Jetson Xavier NX board took on average 4.3ms.

@@ -100,7 +100,7 @@ The second challenge is to minimize the overall inference latency considering th
 One major obstacle is that switching between local computation and computation offloading under the caching mechanism (e.g., when wireless network bandwidth changes) typically requires costly one full local recomputation or full transmission of the input image, and such cost hinders a greedy scheduling method from adopting such switching to gain further overall acceleration.
 To overcome this issue, we schedule between local computation and computation offloading by looking ahead several steps with the predicted future wireless network bandwidth and possible computation reduction based on previous records, to minimize the overall inference latency.
 
-We implement CacheInf based on python and pytorch integrated with self-implemented C++ cuda extensions.
+We implement CacheInf based on python and pytorchh~\cite{paszke2017automatic} integrated with self-implemented C++ CUDA extensions~\cite{cuda}.
 For the tail cases where we need to fully offload an input image to the GPU server, we integrate a state-of-the-art offloading method called Hybrid-Parallel (HP)~\cite{sun2024hybridparallel} which mitigates the caused latency.
 Our baselines include HP, a state-of-the-art cache-based computation reduction methods called EVA2~\cite{buckler_eva_2018}, EVA2 integrated with HP and local computation.
 We evaluated CacheInf on a four-wheel robot equipped with a Jetson NX Xavier~\cite{jetsonnx} that is capable of computing locally with its low-power-consumption GPU.

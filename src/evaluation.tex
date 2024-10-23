@@ -13,7 +13,7 @@
 % \end{figure}
 
 \myparagraph{Testbed}
-We conducted experiments on a four-wheeled robot and a air-ground robot.
+We conducted experiments on a four-wheeled robot and an air-ground robot.
 Both robots are equipped with a Jetson Xavier NX~\cite{jetsonnx} 8G onboard computer with cuda acceleration capability and a MediaTek MT76x2U USB wireless network interface card for wireless connectivity.
 The Jetson Xavier NX is connected to a Leishen N10P LiDAR, an ORBBEC Astra depth camera and an STM32F407VET6 controller via USB serial ports, which are managed and driven using ROS Noetic. 
 The GPU server used in our experiments is equipped with an Intel(R) i5 12400f CPU @ 4.40GHz and an NVIDIA GeForce GTX 2080 Ti 11GB GPU, connected to our robot via Wi-Fi 6 over 80MHz channel at 5GHz frequency.
@@ -33,25 +33,28 @@ The GPU server used in our experiments is equipped with an Intel(R) i5 12400f CP
 %     \end{table}
 
 \myparagraph{Workload}
-We chose two real-world visual robotic applications as our major workloads: 1. Kapao~\cite{kapao} depicted in Figure~\ref{fig:kapao}, a RGB-image-based real-time people key point detection applications used to guide our four-wheeled robot to track and follow a walking people;
-2. AGRNav~\cite{agrnav} depicted in Figure~\ref{fig:agrnav}, an autonomous air-ground robot navigation application that predicts unobserved obstacles by semantic prediction on point clouds and optimizes the navigation trajectory for the air-ground robot.
+We chose two real-world visual robotic applications as our major workloads: 1. Kapao~\cite{kapao} depicted in Figure~\ref{fig:kapao}, a convolution-neural-network-based (CNN-based) real-time people key point detection applications used to guide our four-wheeled robot to track and follow a walking people;
+2. AGRNav~\cite{agrnav} depicted in Figure~\ref{fig:agrnav}, a CNN-based autonomous air-ground robot navigation application that predicts unobserved obstacles by semantic prediction on point clouds and optimizes the navigation trajectory for the air-ground robot.
 % We evaluated two typical real-world robotic applications on our testbed: Kapao, a real-time people-tracking application on our four-wheeled robot (Fig~\ref{fig:kapao}), and AGRNav, an autonomous navigation application on our air-ground robot (Fig~\ref{fig:agrnav}). 
 % These applications feature different model input and output size patterns: Kapao takes RGB images as input and outputs key points of small data volume. In contrast, AGRNav takes point clouds as input and outputs predicted point clouds and semantics of similar data volume as input, implying that AGRNav needs to transmit more data during distributed inference. 
-We also verified CacheInf's performance on a broader range of visual models common to mobile devices: VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet} using their default implementation of torchvision~\cite{noauthor_torchvision_nodate}. 
+We also verified CacheInf's performance on a broader range of visual models common to mobile devices: VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, ResNet~\cite{targ2016resnet} using their default implementation of torchvision~\cite{noauthor_torchvision_nodate}. 
 % And we have verified several models common to mobile devices on a larger scale to further corroborate our observations and findings: DenseNet~\cite{huang2018densely}, VGGNet~\cite{simonyan2015deep}, ConvNeXt~\cite{woo2023convnext}, RegNet~\cite{xu2022regnet}.
 % The models' running statistics are listed in Tab.~\ref{tab:all_app}.
 
 \myparagraph{Dataset}
-For AGRNav we used the officially available sequence of point clouds input~\cite{agrnav} and for Kapao, we used the Collective Activity Dataset (CAD)~\cite{Choi_VSWS_2009} which are sequences of video images of people doing different activities captured using hand-held cameras.
-For the rest of the models from torchvision, we used the DAVIS~\cite{Perazzi2016} dataset which are sequences of video images of different objectives captured also using hand-held cameras.
+For AGRNav we used the officially available sequence of point clouds input~\cite{agrnav} and for Kapao and the rest of the models from torchvision, we used the DAVIS~\cite{Perazzi2016} dataset which are sequences of video images of people and animals doing different activities captured using hand-held cameras.
+% For the rest of the models from torchvision, we used the DAVIS~\cite{Perazzi2016} dataset which are sequences of video images of different objectives captured also using hand-held cameras.
 
 \myparagraph{Experiment Environments}
-The experiments across all systems and all workloads were conducted in two different real-world environments (depicted in Figure~\ref{fig:bandwidth}): 1. indoors, where the robot was moving in our office with desks and separators interfering wireless bandwidth;
-2. outdoors, where the robot was moving in a garden with trees and bushes interfering with wireless signals and less reflection, resulting in lower bandwidth. 
+The experiments across all systems and all workloads were conducted with the robot stationary and the charger plugged in.
+We emulate the mobile indoor environment for the experiments by replaying the wireless network bandwidth limits recorded where the robot was moving in our office with desks and separators interfering wireless bandwidth.
+We adopt such setting to maintain stable computation performance of the robot across different experiments while ensuring that the setting reflects the limited computation resources and limited and unstable wireless network bandwidth that hinder fast visual model inference on the mobile robot.
+% 2. outdoors, where the robot was moving in a garden with trees and bushes interfering with wireless signals and less reflection, resulting in lower bandwidth. 
 % The bandwidth fluctuation of each of the environments are shown in Fig.~\ref{fig:bandwidth}.
 % We evaluated two real-world environments: indoors (robots move in our laboratory with desks and separators interfering with wireless signals) and outdoors (robots move in our campus garden with trees and bushes interfering with wireless signals, resulting in lower bandwidth). 
 
 \myparagraph{Baselines}
+We selected a state-of-the-art cached-based computation reduction method EVA2~\cite{buckler_eva_2018}
 We selected two SOTA inference acceleration methods as baselines: DSCCS~\cite{liang2023dnn} (referred to as DS), which searches for optimal layer partition strategy of a visual model to offload layers to the GPU server to accelerate inference, and Hybrid-Parallel ~\cite{sun2024hybridparallel} (referred to as HP), which enables parallelization of local computation and offloading by also partitioning within the output of local operators besides layer partitioning to further accelerate inference. 
 We also combined DSCCS with our cache mechanism (referred to as DS-C) to present another perspective about our cache mechanism.
 We refer to CacheInf as Ours in the tables.

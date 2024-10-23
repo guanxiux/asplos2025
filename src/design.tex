@@ -1,322 +1,418 @@
 % This chapter presents the detailed design for CacheInf to fulfill the functionality of tracking and reusing cached computation results and scheduling for actions among local computation, offloading or hybrid, with or without cache, to optimally reduce visual model inference latency for mobile robots.
 
-\subsection{Identifying Reusable Computation Results\label{sec:reusable cache}}
-To find and match similar local geometries between consecutive images in a stream of images $\textit{\textbf{I}}=\{I_1, I_2, ..., I_n\}$ to identify reusable cache, we use the standard image stitching procedure: given a pair of consecutive images $I_j$ and $I_{j+1}$, their key points and key point descriptors (or feature vectors) are computed and matched within a distance threshold of the feature vectors; then a homography matrix $M$ is computed based on the corresponding relationship between the key points on each image which minimizes the error.
-The resulting homography matrix is then used to apply perspective transformation to each pixel in $I_j$ to form a new image $\hat{I}_{j+1}$ closest to $I_{j+1}$ as shown in Equation~\ref{eq: pt}, where $(u_j,v_j)$ and $(\hat{u}_{j+1},\hat{v}_{j+1})$ and pixel indices on $I_j$ and $\hat{I}_{j+1}$.
-It is also depicted in the Feature Based Transformed Image in Fig.~\ref{fig:overview}.
-Since the computation of local operators relies on local geometries, the same transformation can be applied to intermediate computation results of the following local operators.
-\begin{equation}
-    (\hat{u}_{j+1},\hat{v}_{j+1},1) = M \times (u_j,v_j,1)
-    \label{eq: pt}
-\end{equation}
-
-While the above process minimizes error between $\hat{I}_{j+1}$ and $I_{j+1}$, the remaining different areas between them are the areas of new information which are uncached and need to be recomputed.
-We filter and identify these areas by applying average pooling over the difference between $\hat{I}_{j+1}$ and $I_{j+1}$ and the pixels with computed difference greater than a preset threshold $N$ (default to be 0.1 when we normalize the value of each  channel of a pixel to between 0 and 1) will be marked as needed to be recomputed as in Equation~\ref{eq:avg_pool}, where $u,v$ are the pixel indices.
-
-\begin{equation}
-    \textit{\textbf{uv}} = \{(u,v)|AveragePooling(|\hat{I}_{j+1} - I_{j+1}|)^{u,v} \geq N\}
-    \label{eq:avg_pool}
-\end{equation}
-
-Suppose there are $Q$ pixels in \textit{\textbf{uv}} and $H$x$W$ total pixels in each image,
-we define the cache ratio between $I_j$ and $I_{j+1}$ as $r = \frac{Q}{H\cdot W}$.
-
-\subsection{Sparse Local Operators\label{sec:sparse}}
-From the above discussion, we have identified the pixels needed to recompute \textit{\textbf{uv}} and we suppose their corresponding features $f_{inp}$ are of size $B$x$C_1$x$Q$, along with the cached input defined as $I'_{inp}$ of size $B$x$C_1$x$H$x$W$.
-Now we focus on how to compute the correct results based \textit{\textbf{uv}}, $f_{inp}$ and $I'_{inp}$.
-There are mainly two kinds of local operators: element-wise local operators such as addition, subtraction, multiplication and division, which solely depends on the value of each element; and convolution local operators such as convolution, average pooling and max pooling, which is influenced by the surrounding areas (e.g., a 2D kernel) of each element .
-We mainly focus on the latter type of local operators since the element-wise local operators can be viewed as a special case of convolution local operators where the surrounding area is of size one.
-
-We first consider the scenario with dense input.
-Assume an image (or feature map) $I_{inp}$ of size $B$x$C_1$x$H$x$W$, a convolution local operator $K$ with its kernel sized $C_2$x$C_1$x$K_1$x$K_2$, stride 1 and no padding and its output feature map $I_{out}$ of size $B$x$C_2$x$H'$x$W'$, then each of the value of the output feature map is determined by
-\begin{equation}
-    I_{out}^{i,j,k,l} = \sum_{c=1}^{C_1} \sum_{m=1}^{K_1} \sum_{n=1}^{K_2} K^{j,c,m,n} * I_{inp}^{i,c,k+m-1,l+n-1}, 
-    \label{eq:kernel}
-\end{equation}
-Omitting the batch dimension and the channel dimension (first two dimension) of $I_{out}$, we can learn from Equation~\ref{eq:kernel} that an output value is determined by an area of $K_1$x$K_2$ on $I_{inp}$ and we define pixels in this area as
-\begin{equation}
-    P_{k,l} = \{(u,v)|k\leq u < k+K_1 \land l\leq v < l+K_2\}
-    \label{eq:set}
-\end{equation}
-where $(k,l)$ is the pixels indices on $I_{out}$.
-
-Moving to the sparse scenario, 
-the indices of pixels on $I_{out}$ that have updated value with \textit{\textbf{uv}} as input would be 
-\begin{equation}
-\textit{\textbf{uv}}' = \{(k,l)|\exists P_{k,l}, s.t. P_{k,l}\cap \textit{\textbf{uv}} \neq \emptyset\}
-\end{equation} 
-which can be view as wrapping around pixels in \textit{\textbf{uv}} by $K_1$x$K_2$ and may involve pixels in $I'_{inp}$.
-
-Note that $\textit{\textbf{uv}}$ and cached input $I'_{inp}$ are possibly in different planes determined by the homography matrix $M$.
-We may transform the cached intermediates every time before computation, but it will unfortunately involve computation of the whole feature map and invalidate the acceleration of sparse computation.
-Instead, during computation we query the original cached intermediates by transforming the pixel indices with $M$:
-\begin{equation}
-    F(i,j,u,v, I'_{inp}, f_{inp}) = \left\{
-        \begin{aligned}
-            f_{inp}^{i,j,u,v}  & , & (u,v) \in \textit{\textbf{uv}}, \\
-            {I'}_{inp}^{i,j,G(u,v,M)} &, & (u,v) \notin \textit{\textbf{uv}}
-        \end{aligned}
-        \right. 
-    \label{eq:query}
-\end{equation}
-where $G(u,v,M) = H^{-1}(M^{-1}\times H((u,v)))$ which transforms $(u,v)$ into the plane of cached input $I'_{inp}$, and $H(\cdot)$ and $H^{-1}(\cdot)$ means turning a vector to a homogeneous vectors and the opposite.
-Then for $(u,v)\in\textit{\textbf{uv}}'$, the corresponding computed output is
-\begin{equation}
-    f_{out}^{i,j,u,v} = \sum_{c=1}^{C_1} \sum_{m=1}^{K_1} \sum_{n=1}^{K_2} K^{j,c,m,n}\cdot F(i,c,k+m-1,l+n-1, I'_{inp}, f_{inp})
-\end{equation}
-Until now we get the indices of the altered output values in output feature map $\textit{\textbf{uv}}'$ and the corresponding features $f_{out}$ which can then be passed to the subsequent computation.
-
-Along the local operators where local geometries are preserved, we can repeat the above process by passing only the sparse features and their indices and do not need to merge the sparse features with cache.
-When a non-local operator is met (e.g., matrix multiplication), we transform its cached input with $M$ and merge $f_{inp}$ into the transformed input according to their sparse indices $\textit{\textbf{uv}}$, which recovers the correct geometries of the whole feature map.
-To minimize performance impact to update $I'_{inp}$, we update $I'_{inp}$ by transforming $I'_{inp}$ and merge it with $f_{inp}$ only after the whole computation process finishes, when the system is typically idle and waiting for the next input.
-
-Also, to save memory consumption of cached intermediates, notice that the above process is basically wrapping the sparse pixels with the kernel size $K_1$x$K_2$ and computing on the wrapped pixels, we can merge the query process in Equation~\ref{eq:query} of multiple convolution local operators into the first convolution local operator.
-For example, if a next operator is a convolution local operator with kernel size $K'_1$x$K'_2$, we can wrap the sparse pixels with an extended kernel size $(K_1+K'_1)$x$(K_2+K'_2)$ in the first local operator, and the wrapping process of the next operator is skipped (we refer to this process as merging cache).
-In this case, the cache for the input of the next operator is needless and can be excluded to save memory consumption and the reduced number of cached input further leverages the cost to update $I'_{inp}$.
-
-
-\subsection{Cache-Aware Scheduling}
-% In the above discussion we have analyzed the opportunity for visual model inference acceleration by reusing previous computation result.
-% In a edge-cloud collaborative system as CacheInf, reusing previous computation result has the potential to not only reduce transmission time by reducing transmission data volume, but also reduce local computation time by shrinking computation size using sparse local operators, and the extend of such reduction is determined by cache ratio of the current input $r$.
-We define all the operators involved in a visual model as $\textit{\textbf{O}} = \{o_1, o_2,...,o_n\}$ and the portion of locally executed input of each operator as $\textit{\textbf{X}}=\{x_1, x_2, ..., x_n\}$, $0\le x_i \le 1$ and $1-x_i$ represents the the portion of input executed on the GPU server.
-The indices of local operators is defined as $\textit{\textbf{O}}_l$.
-While offloading, we transmit the sparse features together with their indices encoded as a bit-mask and the transmission volume is almost inversely proportional to cache ratio $r$.
-% : assume wholely offloading computation of a visual model from a layer will require transmission of $m=B$x$C$x$H$x$W$ element and each element is a float32 number, summing up to 4m bytes data; in the cached case with cache ratio $r$, the data volume needed to transmit will be $(1-r)4m + \frac{m}{8BxC}$ bytes, where the latter term is the bit-mask of $H$x$W$ encoding the indices of the transmitted pixels on the whole feature map.
-% When integrating Hybrid-Parallel that would slice the sparse features, we simply slice the sparse features and only encode the bit-mask for indices of the slice for the server, while preserving the features and indices for the robot.
-
-However, the local computation time acceleration with sparse local operators has a complex relationship with cache ratio, which is affected by the operator implementation, gpu structure and so on.
-Thus we profile such relationship by altering the cache ratio and $x_i$ and record the average execution time for every operator involved in the visual model and we define the profile result as a function $T_c(o_i, x_i, r)$ for the robot ($c$ means client) and $T_s(o_i, x_i, r)$ for the server, which returns the execution time of operator $o_i$ under $x_i$ with cache ratio $r$.
-We also profile the time cost to update cached input for each local operator and get $U_r(o_i, x_i, r)$ and $U_s(o_i, x_i, r)$.
-Note that for non-local operators ($\textit{\textbf{O}}_{nonlocal}=\{i|1\le i\le n \land i \notin \textit{\textbf{O}}_l\}$), we make both $T(\cdot)$ and $U(\cdot)$ returns time of computation on the whole input.
-
-\subsubsection{Schedule to Merge Cache}
-With the above setup, the first problem to solve will be the choices of merging the cache of sparse local operators to further accelerate computation while saving memory consumption.
-We define the indices of the chosen operators to cache their input as $\hat{\textit{\textbf{O}}}_c$ and the resulting reduction of cache ratio (since extra input will be included) of each operator as $o_I$ to be $R(\hat{\textit{\textbf{O}}}_c, o_i)$.
-Since these choices will determine the operators that will cache their input and will be reused across different inference, these choices should be fixed during the whole inference task.
-Thus we start by considering only the worst case where offloading is not possible and $\forall x_i\in \textit{\textbf{X}}, x_i=1$.
-In this case the execution time of every operator will be $T_c(o_i, 1, r-R(\hat{\textit{\textbf{O}}}_c, o_i))$, and the optimization problem will be 
-\begin{equation}
-    \min\limits_{\hat{\textit{\textbf{O}}}_c \subset \textit{\textbf{O}}_l} \frac{1}{w} \sum_{i=1}^n \sum_{j=0}^w T_c(o_i, 1, r_j+R(\hat{\textit{\textbf{O}}}_c, o_i)) + U_{sum}(\hat{\textit{\textbf{O}}}_c, r_j)
-    \label{eq:cached op}
-\end{equation}
-where $r_j = \frac{j}{w}$ with $w>1$ is the possible cache ratio considered (we empirically set $w$ to 10), and $U_{sum}(\hat{\textit{\textbf{O}}}_c, r) = \sum\limits_{k \in \hat{\textit{\textbf{O}}}_c} U(o_k, x_k, r)$ is the total time to update cache of operators in $\hat{\textit{\textbf{O}}}_c$.
-
-Solving of this optimization problem seeks the optimal choices of cache operators $\hat{\textit{\textbf{O}}}_c$ that minimizes local execution time averaged across all possible cache ratio.
-Note that we do not need to explicitly consider memory consumption because the latter term in Equation~\ref{eq:cached op} will naturally reduce the number of cached operators and favor operators with smaller size of input and thus shorter time to update cache.
-
-\subsubsection{Schedule of Offloading\label{sec:schedule}}
-Finally, we are combining all the above components to schedule for computation and offloading in a cache-aware way to optimize end-to-end inference latency for robotic visual models.
-With Hybrid-Parallel integrated, cache can exists partially both at the robot and the server and we analyze the cache ratio on robot $r_c$ and the cache ratio $r_s$ on server by enquiry the current cached pixels with the previous slice of input (i.e., $x_i$).
-For an $x_i$, we define the minimum portion of locally executed input of its parent operators (i.e., operators whose output is the input of $o_i$) as $x'_i$ and different between $x_i$ indicates offloading to/from the server.
-For every operator $o_i \in \textit{\textbf{O}}$ involved in a visual model, we define its finishing time since the first operator starts executing as $t_i^{c}$ on the robot ($c$ means client) and $t_i^{s}$ on server.
-
-We can have the finish time of each operator on the robot and the server as the following, where $D(o_i, x'_i-x_i,r)$ is the data volume needed to be transmitted at operator $o_i$ with cache ratios $r_c$ and $r_s$ and $b$ is the estimated bandwidth:
-\begin{equation*}
-    t_i^{c} = \left\{
-        \begin{aligned}
-            &t_{i-1}^{c} + T_c(o_i, x_i, r_c-R(\hat{\textit{\textbf{O}}}_c, o_i)),&&1\le i\le n \land x_i\le x'_i \\
-            &max(T_c(o_i, x_i, r_c-R(\hat{\textit{\textbf{O}}}_c, o_i)) +\\
-            & \enspace \enspace t_{i-1}^{c}, \enspace \frac{1}{b}D(o_i, x'_i-x_i,r)+ t_i^{s}),&&1\le i\le n \land x_i >x'_i
-        \end{aligned}
-    \right.
-\end{equation*}
-
-\begin{equation*}
-    t_i^{s} = \left\{
-        \begin{aligned}
-            &t_{i-1}^{s} + T_s(o_i, 1-x_i, r_s-R(\hat{\textit{\textbf{O}}}_c, o_i)),&&1\le i\le n \land x_i\ge x'_i \\
-            &max(T_s(o_i, 1-x_i, r_s-R(\hat{\textit{\textbf{O}}}_c, o_i)) + \\
-            & \enspace \enspace t_{i-1}^{s}, \enspace \frac{1}{b} D(o_i, x'_i-x_i,r_s)+ t_i^{c}),&&1\le i\le n \land x_i<x'_i
-        \end{aligned}
-    \right.
-\end{equation*}
-The first rows of the above two equations describe the scenarios where either the robot or the server does not need to receive data from the opposite side and thus the finishing time of this operator only depends on its local execution time.
-The second rows instead describe the opposite scenarios, where either the robot or the server needs to receive data from the opposite side (e.g., $x_i > x'_i$ for the robot) and have to wait until the same operator to finish computing at the opposite side and then be transmitted at bandwidth $b$.
-
-With the above statements, optimizing the end-to-end inference latency for the visual model with cache enabled at a given bandwidth $b$ and cache ratios $r_c$ and $r_s$ is to solve
+\subsection{Cache Analyzer, Cache Combiner and Recomputation Input Constructor}
+As described above, Cache Analyzer extracts the motion vectors of small pixel blocks of the input image and combines (average) the the motion vectors of small pixel blocks involved in a receptive field as the motion vector for the receptive field of the cached activations.
 \begin{equation}
     \begin{aligned}
-        \min\limits_{\textit{\textbf{X}}} & t_n^{c} \\
-         s.t. \enspace \enspace&  x_1 = x_n = 1 \\
-         & \forall j \in \textit{\textbf{O}}_{nonlocal}, x_j (mod \enspace 1) = 0 \\
-         & \forall j \notin \hat{\textit{\textbf{O}}}_c, x_j = x'_j
+        \min\limits_{\textit{\textbf{$i,j$}}} &\enspace \frac{(P_{k,l}-P_{i+k,j+l}')^2}{n}\\
+         s.t. \enspace \enspace& 0 \le k \le M \\
+         & 0 \le l \le N \\
+         & 0 \le i + k \le M \\
+         & 0 \le j + l \le N \\
     \end{aligned}
-    \label{eq:e2e}
+    \label{eq:block_matching}
 \end{equation}
-In Equation~\ref{eq:e2e}, the first two constraints ensure that inference output will finally be located at the robot and non-local operators will always have full input; the third constraint ensures that offloading will not happen within an operator whose cached is merged into the cache of other operators, since we cannot recover the operator's whole feature map.
-We solve both optimization problems in Equation~\ref{eq:cached op} and~\ref{eq:e2e} with the differential evolution algorithm~\cite{qin2008differential} and store the solutions of different bandwidth and cache ratios of Equation~\ref{eq:e2e} in a dictionary referred to as $Schedule$.
+The motion vectors can be computed as in Eq.~\ref{eq:block_matching} which is a block matching process that minimizes mean square error (MSE) between small pixels blocks in the cached input image and the new input image, where $P_{k,l}$ is a small pixel block indexed by $(k,l)$ in the cached input image and $P_{i+k,j+l}'$ is a small pixel block on the new input image with offset as $(i,j)$ and $(i,j)$ is the motion vector of $P_{k,l}$. 
+Both images are of size $M*N$ and each pixel block consist of $n$ pixels.
 
-The resulting algorithms of CacheInf at both the robot and the server are presented in Algorithm~\ref{alg:client} and Algorithm~\ref{alg:server}.
-Line 1 to 3 in Algorithm~\ref{alg:client} and Line 1 to 4 in Algorithm~\ref{alg:server} profile the model at both the robot and the server and compute a schedule as described in Section~\ref{sec:schedule}, where the computation is located on the server to speed up computation.
-The rest of Algorithm~\ref{alg:server} is basically mirrored from that of Algorithm~\ref{alg:client} and thus we focus on Algorithm~\ref{alg:client} for simplicity.
+When the above computation process finishes, we obtain the final minimized MSE of each small pixel blocks and high MSE indicates that a pixel block on the cached input image cannot finely match on the new input image, and thus we select such pixel blocks with MSE above a threshold as sparse update (compensation pixels) to the cached input image.
+Inversely, Cache Combiner moves pixel blocks on the cached image and the cached activations according to the motion vectors and merge the compensation pixels to the cached image and the cached activations.
+
+The variance of motion vectors of small pixel blocks in a receptive field (internal variance) is computed as in Eq.~\ref{design:variance}
+\begin{equation}
+    var_i = \frac{1}{m}\sum_j (MSE_{max} -MSE_j)\cdot (mv_j - \hat{mv})
+    \label{design:variance}
+\end{equation}
+where the $j$ indexed small pixel block resides in the receptive field indexed by $i$. 
+$MSE_{max}$ is the maximal mean square error of small pixel blocks within the receptive field and $mv_j$ and $\hat{mv}$ are motion vectors indexed by $j$ and the average motion vector of motion vectors in the receptive field.
+The internal variance of a receptive field describes how the pixel blocks in this receptive field diverges in movement which distinguishes moving objects instead of stationary background captured from a moving camera and the existence of new information.
+Note that the factor $(MSE_{max} -MSE_j)$ is used to filter out motion vectors caused by pixel blocks on the cached input image which cannot finely match on the new input image since these pixel blocks tend to generate random motion vectors.
+
+With the calculated receptive field internal variance, Recomputation Input Constructor collects pixels on the updated cached input image from the receptive field with the highest internal variance and its surrounding receptive fields that meets a internal variance threshold.
+The resulting sub-image will be fed to the subsequent inference pipeline.
+Note that the inference process will be intercepted by Cache Combiner when the selected operator with its output activations cached, where Cache Combiner merge the computed partial activations back to the cached activations and then the subsequent calculation will be conducted on the full-sized updated cached activations.
+
+
+
+\subsection{Collaborative Offload Scheduler}
+We define the ratio of pixel blocks on the input image whose computed MSE is above a threshold (mismatched) as $c$ and we define the computation time before the cached operator as $T_r$ for the robot and $T_s$ and the execution time of the rest operators as $T_r'$ and $T_s'$. 
+We suppose the size of the collected recomputation input $R$ by Recomputation Input Constructor and the transmission data volume $V$ of CacheInf metadata are both proportional to $c$, and the proportional counterparts are referred to as $R_c$ and $V_c$.
+We assume $T_r$ and $T_s$ are proportional to the recomputation input size $R_c$.
+The major goal of Collaborative Offload Scheduler is to statically find an optimal placement of computation for a period of given times ($n$) of inference for each pair of wireless network bandwidth $b$, $r$ and the current placement of computation $p$, supposing that the bandwidth and $r$ will hold during during the period.
 
 \begin{algorithm}[htbp]
-    \caption{\small CacheInfClient\label{alg:client}}
+    \caption{\small Collaborative Offload Schedule\label{alg:schedule}}
     \SetKwInput{KwInput}{Input}                % Set the Input
     \SetKwInput{KwOutput}{Output}              % set the Output
     \DontPrintSemicolon
-      \KwInput{\small A continual sequence of video images $\textit{\textbf{I}}$; DNN model $M$}
-      \KwOutput{\small The inference results $ret$ on each image in $\textit{\textbf{I}}$ }
+      \KwInput{\small Wireless network bandwidth $b$; ratio of mismatched pixel blocks $c$; current computation placement $p$; consideration period $n$}
+      \KwOutput{\small The static schedule of computation placement under $b,c,p$, $schedule$}
     %   \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $X_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
-       \tcp{\footnotesize profile}
     
-        $T_c, U_c = Profile(M)$
+    $robot\_time = 0$
     
-        $Send(M, T_c, U_c)$
+    $server\_time = 0$
     
-        $Schedule, \hat{\textit{\textbf{O}}}_c = Receive()$
+    $r = R_c / R$
 
-        $Cache = InitCache(\hat{\textit{\textbf{O}}}_c)$
 
-       \tcp{\footnotesize inference}
+    \tcp{\footnotesize First inference time cost}
+       \If{$p$ == robot}{
 
-       \ForEach{$I \enspace in \enspace \textit{\textbf{I}}$ \enspace}{
-            $b = EstimateBandwidth()$
+        $server\_time = V / b + T_s + T_s'$
 
-            $r_c, r_s = AnalyzeCacheRatio(I, Cache[1])$
+        $robot\_time = T_r*r + T_r'$
 
-            $inp, M = IdentifyCache(I, Cache[1])$
-
-            $ Send(b, r_c, r_s, M) $
-
-            $x, x' = Schedule[b,r_c,r_s]$
-
-            \ForEach{$i = 1, 2, ..., n $ \enspace}{
-                \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i>0$ and IsSparse(inp)}{
-                    $inp = DenseRecover(inp, Cache[i],M)$
-
-                    $UpdateCache(Cache[i], inp, M)$
-                }
-                \ElseIf{$x'_i>0$ and $i\in \hat{\textit{\textbf{O}}}_c$}{
-                    $inp = SparseGather(inp, Cache[i], M)$
-    
-                    $UpdateCache(Cache[i], inp, M)$
-                }
-                \If{$x_i < x'_i$}{
-                    $inp, inp' = Slice(inp, x_i, x'_i)$
-
-                    $Send(inp')$
-                }
-                \ElseIf{$x_i > x'_i$}{
-                    $inp = Merge(inp, Receive())$
-                }
-                \If{$x_i>0$}{
-                    \If{$IsSparse(inp)$}{
-                        $inp = SparseExecute(o_i, inp)$ 
-                    }
-                    \Else{
-                        $inp = Execute(o_i, inp)$
-                    }
-                }
-
-            }
-            $ret[I] = inp$
        }
+       \Else{
+        $robot\_time = T_r + T_r'$
+
+        $server\_time = V_c / b + T_s*r + T_s'$
+
+        }
+
+        \tcp{\footnotesize Subsequent inference time cost}
+
+       $server\_time += (n-1)*(V_c / b + T_s*r + T_s')$
+
+       $robot\_time += (n-1)*(T_r*r + T_r')$
+
+       \If{$robot\_time > server\_time$}{
+        schedule = server
+       }
+       \Else{schedule = robot}
       
-\KwRet{$ret$}
+\KwRet{$schedule$}
 
 \end{algorithm}
 
+As shown in Algo.~\ref{alg:schedule}, we estimate the time cost of switching the computation placement from current $p$ to either the robot and the GPU server for $n$ inference.
+If the current computation placement is at the robot, switching to the GPU server will incur full transmission of the input data and full computation on the visual model (line 5); if and the GPU server side, switching to the robot will incur full computation on the visual model (line 9).
+If current computation placement remains, for the robot side, each inference incurs time cost of visual model inference proportional to $c$ (line 6 and 13) and for the server side, each inference incurs time cost of both transmission and visual model inference (line 10 and 12).
+Finally we select the computation placement with least estimated inference time for $n$ inference as the scheduled computation placement.
 
-Line 6 to 8 in Algorithm~\ref{alg:client} identifies the reusable cache by matching features between the input image $I$ and its cached counterpart $Cache[1]$ and gets the homography matrix $M$ and the sparse uncached input that needs to be recomputed.
-After communicating info of bandwidth, cache ratio and homography matrix with the server, we query the $Schedule$ to get input ratio $x$ and parent operator input ratio $x'$ as described in Section~\ref{sec:schedule}.
-The we start executing each operator $o_i$ involved in the model sequentially.
-We recover the whole input by combining sparse input $inp$ with cache for non-local operators or gather extra pixels from cache for $inp$ for sparse local operator computation at cached operators at line 12 to 19.
-When offloading is required to accelerate inference, we send a slice of $inp$ to the server or merge received partial input from the server to $inp$ at line 20 to 26.
-When $inp$ is finally ready and not empty, we execute the operator $o_i$ with inp where we choose the sparse local operator for sparse input and choose the original operator for dense input at line 27 to 34.
+Note that the above process is conducted offline during the system initialization stage.
+At runtime, as the robot collects the input images and estimates the wireless network bandwidth, Collaborative Offload Scheduler maintains an estimation of $b$ and $c$ and every $n$ inference update the computation placement by querying the precomputed schedule.
+Computation placement to either the robot or the GPU server will cause the CacheInf metadata computed by the previous stages to be transmitted to either the CacheInf Executor at the robot side or at the GPU server side for inference result computation.
+If the placement is at the GPU server side, the inference results will be transmitted back to the robot as show in Fig.~\ref{fig:overview}.
 
 
-\begin{algorithm}[htbp]
-    \caption{\small CacheInfServer\label{alg:server}}
-    % \SetKwInput{KwInput}{Input}                % Set the Input
-    % \SetKwInput{KwOutput}{Output}              % set the Output
-    % \DontPrintSemicolon
-    %   \KwInput{\small A continual sequence of video images $\textit{\textbf{I}}$; DNN model $M$}
-    %   \KwOutput{\small The inference results $ret$ on each image in $\textit{\textbf{I}}$ }
-    % %   \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $X_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
-       \tcp{\footnotesize profile and compute schedule at the server}
-    
-        $ M,T_c, U_c = Receive()$
+% \subsection{Identifying Reusable Computation Results\label{sec:reusable cache}}
+% To find and match similar local geometries between consecutive images in a stream of images $\textit{\textbf{I}}=\{I_1, I_2, ..., I_n\}$ to identify reusable cache, we use the standard image stitching procedure: given a pair of consecutive images $I_j$ and $I_{j+1}$, their key points and key point descriptors (or feature vectors) are computed and matched within a distance threshold of the feature vectors; then a homography matrix $M$ is computed based on the corresponding relationship between the key points on each image which minimizes the error.
+% The resulting homography matrix is then used to apply perspective transformation to each pixel in $I_j$ to form a new image $\hat{I}_{j+1}$ closest to $I_{j+1}$ as shown in Equation~\ref{eq: pt}, where $(u_j,v_j)$ and $(\hat{u}_{j+1},\hat{v}_{j+1})$ and pixel indices on $I_j$ and $\hat{I}_{j+1}$.
+% It is also depicted in the Feature Based Transformed Image in Fig.~\ref{fig:overview}.
+% Since the computation of local operators relies on local geometries, the same transformation can be applied to intermediate computation results of the following local operators.
+% \begin{equation}
+%     (\hat{u}_{j+1},\hat{v}_{j+1},1) = M \times (u_j,v_j,1)
+%     \label{eq: pt}
+% \end{equation}
 
-        $T_s, U_s = Profile(M)$
+% While the above process minimizes error between $\hat{I}_{j+1}$ and $I_{j+1}$, the remaining different areas between them are the areas of new information which are uncached and need to be recomputed.
+% We filter and identify these areas by applying average pooling over the difference between $\hat{I}_{j+1}$ and $I_{j+1}$ and the pixels with computed difference greater than a preset threshold $N$ (default to be 0.1 when we normalize the value of each  channel of a pixel to between 0 and 1) will be marked as needed to be recomputed as in Equation~\ref{eq:avg_pool}, where $u,v$ are the pixel indices.
 
-        $Schedule, \hat{\textit{\textbf{O}}}_c = ComputeSchedule(T_s, U_s, T_c, U_c)$
+% \begin{equation}
+%     \textit{\textbf{uv}} = \{(u,v)|AveragePooling(|\hat{I}_{j+1} - I_{j+1}|)^{u,v} \geq N\}
+%     \label{eq:avg_pool}
+% \end{equation}
 
-        $ Send(Schedule, \hat{\textit{\textbf{O}}}_c) $
+% Suppose there are $Q$ pixels in \textit{\textbf{uv}} and $H$x$W$ total pixels in each image,
+% we define the cache ratio between $I_j$ and $I_{j+1}$ as $r = \frac{Q}{H\cdot W}$.
 
-        $Cache = InitCache(\hat{\textit{\textbf{O}}}_c)$
+% \subsection{Sparse Local Operators\label{sec:sparse}}
+% From the above discussion, we have identified the pixels needed to recompute \textit{\textbf{uv}} and we suppose their corresponding features $f_{inp}$ are of size $B$x$C_1$x$Q$, along with the cached input defined as $I'_{inp}$ of size $B$x$C_1$x$H$x$W$.
+% Now we focus on how to compute the correct results based \textit{\textbf{uv}}, $f_{inp}$ and $I'_{inp}$.
+% There are mainly two kinds of local operators: element-wise local operators such as addition, subtraction, multiplication and division, which solely depends on the value of each element; and convolution local operators such as convolution, average pooling and max pooling, which is influenced by the surrounding areas (e.g., a 2D kernel) of each element .
+% We mainly focus on the latter type of local operators since the element-wise local operators can be viewed as a special case of convolution local operators where the surrounding area is of size one.
 
-       \tcp{\footnotesize inference}
+% We first consider the scenario with dense input.
+% Assume an image (or feature map) $I_{inp}$ of size $B$x$C_1$x$H$x$W$, a convolution local operator $K$ with its kernel sized $C_2$x$C_1$x$K_1$x$K_2$, stride 1 and no padding and its output feature map $I_{out}$ of size $B$x$C_2$x$H'$x$W'$, then each of the value of the output feature map is determined by
+% \begin{equation}
+%     I_{out}^{i,j,k,l} = \sum_{c=1}^{C_1} \sum_{m=1}^{K_1} \sum_{n=1}^{K_2} K^{j,c,m,n} * I_{inp}^{i,c,k+m-1,l+n-1}, 
+%     \label{eq:kernel}
+% \end{equation}
+% Omitting the batch dimension and the channel dimension (first two dimension) of $I_{out}$, we can learn from Equation~\ref{eq:kernel} that an output value is determined by an area of $K_1$x$K_2$ on $I_{inp}$ and we define pixels in this area as
+% \begin{equation}
+%     P_{k,l} = \{(u,v)|k\leq u < k+K_1 \land l\leq v < l+K_2\}
+%     \label{eq:set}
+% \end{equation}
+% where $(k,l)$ is the pixels indices on $I_{out}$.
 
-        \While{True}{
-            $ b, r_c, r_s, M = Receive()$ 
+% Moving to the sparse scenario, 
+% the indices of pixels on $I_{out}$ that have updated value with \textit{\textbf{uv}} as input would be 
+% \begin{equation}
+% \textit{\textbf{uv}}' = \{(k,l)|\exists P_{k,l}, s.t. P_{k,l}\cap \textit{\textbf{uv}} \neq \emptyset\}
+% \end{equation} 
+% which can be view as wrapping around pixels in \textit{\textbf{uv}} by $K_1$x$K_2$ and may involve pixels in $I'_{inp}$.
 
-            $x, x' = Schedule[b,r_c,r_s]$
+% Note that $\textit{\textbf{uv}}$ and cached input $I'_{inp}$ are possibly in different planes determined by the homography matrix $M$.
+% We may transform the cached intermediates every time before computation, but it will unfortunately involve computation of the whole feature map and invalidate the acceleration of sparse computation.
+% Instead, during computation we query the original cached intermediates by transforming the pixel indices with $M$:
+% \begin{equation}
+%     F(i,j,u,v, I'_{inp}, f_{inp}) = \left\{
+%         \begin{aligned}
+%             f_{inp}^{i,j,u,v}  & , & (u,v) \in \textit{\textbf{uv}}, \\
+%             {I'}_{inp}^{i,j,G(u,v,M)} &, & (u,v) \notin \textit{\textbf{uv}}
+%         \end{aligned}
+%         \right. 
+%     \label{eq:query}
+% \end{equation}
+% where $G(u,v,M) = H^{-1}(M^{-1}\times H((u,v)))$ which transforms $(u,v)$ into the plane of cached input $I'_{inp}$, and $H(\cdot)$ and $H^{-1}(\cdot)$ means turning a vector to a homogeneous vectors and the opposite.
+% Then for $(u,v)\in\textit{\textbf{uv}}'$, the corresponding computed output is
+% \begin{equation}
+%     f_{out}^{i,j,u,v} = \sum_{c=1}^{C_1} \sum_{m=1}^{K_1} \sum_{n=1}^{K_2} K^{j,c,m,n}\cdot F(i,c,k+m-1,l+n-1, I'_{inp}, f_{inp})
+% \end{equation}
+% Until now we get the indices of the altered output values in output feature map $\textit{\textbf{uv}}'$ and the corresponding features $f_{out}$ which can then be passed to the subsequent computation.
 
-            \ForEach{$i = 1, 2, ..., n $ \enspace}{
-                \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i<1$ and IsSparse(inp)}{
-                    $inp = DenseRecover(inp, Cache[i],M)$
+% Along the local operators where local geometries are preserved, we can repeat the above process by passing only the sparse features and their indices and do not need to merge the sparse features with cache.
+% When a non-local operator is met (e.g., matrix multiplication), we transform its cached input with $M$ and merge $f_{inp}$ into the transformed input according to their sparse indices $\textit{\textbf{uv}}$, which recovers the correct geometries of the whole feature map.
+% To minimize performance impact to update $I'_{inp}$, we update $I'_{inp}$ by transforming $I'_{inp}$ and merge it with $f_{inp}$ only after the whole computation process finishes, when the system is typically idle and waiting for the next input.
 
-                    $UpdateCache(Cache[i], inp, M)$
-                }
-                \ElseIf{$x'_i<1$ and $i\in \hat{\textit{\textbf{O}}}_c$}{
-                    $inp = SparseGather(inp, Cache[i], M)$
+% Also, to save memory consumption of cached intermediates, notice that the above process is basically wrapping the sparse pixels with the kernel size $K_1$x$K_2$ and computing on the wrapped pixels, we can merge the query process in Equation~\ref{eq:query} of multiple convolution local operators into the first convolution local operator.
+% For example, if a next operator is a convolution local operator with kernel size $K'_1$x$K'_2$, we can wrap the sparse pixels with an extended kernel size $(K_1+K'_1)$x$(K_2+K'_2)$ in the first local operator, and the wrapping process of the next operator is skipped (we refer to this process as merging cache).
+% In this case, the cache for the input of the next operator is needless and can be excluded to save memory consumption and the reduced number of cached input further leverages the cost to update $I'_{inp}$.
 
-                    $UpdateCache(Cache[i], inp, M)$
-                }
-                \If{$x_i > x'_i$}{
-                    $inp, inp' = Slice(inp, x_i, x'_i)$
 
-                    $Send(inp')$
-                }
-                \ElseIf{$x_i < x'_i$}{
-                    $inp = Merge(inp, Receive())$
-                }
+% % In the above discussion we have analyzed the opportunity for visual model inference acceleration by reusing previous computation result.
+% % In a edge-cloud collaborative system as CacheInf, reusing previous computation result has the potential to not only reduce transmission time by reducing transmission data volume, but also reduce local computation time by shrinking computation size using sparse local operators, and the extend of such reduction is determined by cache ratio of the current input $r$.
+% We define all the operators involved in a visual model as $\textit{\textbf{O}} = \{o_1, o_2,...,o_n\}$ and the portion of locally executed input of each operator as $\textit{\textbf{X}}=\{x_1, x_2, ..., x_n\}$, $0\le x_i \le 1$ and $1-x_i$ represents the the portion of input executed on the GPU server.
+% The indices of local operators is defined as $\textit{\textbf{O}}_l$.
+% While offloading, we transmit the sparse features together with their indices encoded as a bit-mask and the transmission volume is almost inversely proportional to cache ratio $r$.
+% % : assume wholely offloading computation of a visual model from a layer will require transmission of $m=B$x$C$x$H$x$W$ element and each element is a float32 number, summing up to 4m bytes data; in the cached case with cache ratio $r$, the data volume needed to transmit will be $(1-r)4m + \frac{m}{8BxC}$ bytes, where the latter term is the bit-mask of $H$x$W$ encoding the indices of the transmitted pixels on the whole feature map.
+% % When integrating Hybrid-Parallel that would slice the sparse features, we simply slice the sparse features and only encode the bit-mask for indices of the slice for the server, while preserving the features and indices for the robot.
 
-                \If{$x_i < 1$}{
-                    \If{$IsSparse(inp)$}{
-                        $inp = SparseExecute(o_i, inp)$ 
-                    }
-                    \Else{$inp = Execute(o_i, inp)$ }
-                }
+% However, the local computation time acceleration with sparse local operators has a complex relationship with cache ratio, which is affected by the operator implementation, gpu structure and so on.
+% Thus we profile such relationship by altering the cache ratio and $x_i$ and record the average execution time for every operator involved in the visual model and we define the profile result as a function $T_c(o_i, x_i, r)$ for the robot ($c$ means client) and $T_s(o_i, x_i, r)$ for the server, which returns the execution time of operator $o_i$ under $x_i$ with cache ratio $r$.
+% We also profile the time cost to update cached input for each local operator and get $U_r(o_i, x_i, r)$ and $U_s(o_i, x_i, r)$.
+% Note that for non-local operators ($\textit{\textbf{O}}_{nonlocal}=\{i|1\le i\le n \land i \notin \textit{\textbf{O}}_l\}$), we make both $T(\cdot)$ and $U(\cdot)$ returns time of computation on the whole input.
 
-            }
-       }
-\end{algorithm}
-    
-    
+% \subsubsection{Schedule to Merge Cache}
+% With the above setup, the first problem to solve will be the choices of merging the cache of sparse local operators to further accelerate computation while saving memory consumption.
+% We define the indices of the chosen operators to cache their input as $\hat{\textit{\textbf{O}}}_c$ and the resulting reduction of cache ratio (since extra input will be included) of each operator as $o_I$ to be $R(\hat{\textit{\textbf{O}}}_c, o_i)$.
+% Since these choices will determine the operators that will cache their input and will be reused across different inference, these choices should be fixed during the whole inference task.
+% Thus we start by considering only the worst case where offloading is not possible and $\forall x_i\in \textit{\textbf{X}}, x_i=1$.
+% In this case the execution time of every operator will be $T_c(o_i, 1, r-R(\hat{\textit{\textbf{O}}}_c, o_i))$, and the optimization problem will be 
+% \begin{equation}
+%     \min\limits_{\hat{\textit{\textbf{O}}}_c \subset \textit{\textbf{O}}_l} \frac{1}{w} \sum_{i=1}^n \sum_{j=0}^w T_c(o_i, 1, r_j+R(\hat{\textit{\textbf{O}}}_c, o_i)) + U_{sum}(\hat{\textit{\textbf{O}}}_c, r_j)
+%     \label{eq:cached op}
+% \end{equation}
+% where $r_j = \frac{j}{w}$ with $w>1$ is the possible cache ratio considered (we empirically set $w$ to 10), and $U_{sum}(\hat{\textit{\textbf{O}}}_c, r) = \sum\limits_{k \in \hat{\textit{\textbf{O}}}_c} U(o_k, x_k, r)$ is the total time to update cache of operators in $\hat{\textit{\textbf{O}}}_c$.
+
+% Solving of this optimization problem seeks the optimal choices of cache operators $\hat{\textit{\textbf{O}}}_c$ that minimizes local execution time averaged across all possible cache ratio.
+% Note that we do not need to explicitly consider memory consumption because the latter term in Equation~\ref{eq:cached op} will naturally reduce the number of cached operators and favor operators with smaller size of input and thus shorter time to update cache.
+
+% \subsubsection{Schedule of Offloading\label{sec:schedule}}
+% Finally, we are combining all the above components to schedule for computation and offloading in a cache-aware way to optimize end-to-end inference latency for robotic visual models.
+% With Hybrid-Parallel integrated, cache can exists partially both at the robot and the server and we analyze the cache ratio on robot $r_c$ and the cache ratio $r_s$ on server by enquiry the current cached pixels with the previous slice of input (i.e., $x_i$).
+% For an $x_i$, we define the minimum portion of locally executed input of its parent operators (i.e., operators whose output is the input of $o_i$) as $x'_i$ and different between $x_i$ indicates offloading to/from the server.
+% For every operator $o_i \in \textit{\textbf{O}}$ involved in a visual model, we define its finishing time since the first operator starts executing as $t_i^{c}$ on the robot ($c$ means client) and $t_i^{s}$ on server.
+
+% We can have the finish time of each operator on the robot and the server as the following, where $D(o_i, x'_i-x_i,r)$ is the data volume needed to be transmitted at operator $o_i$ with cache ratios $r_c$ and $r_s$ and $b$ is the estimated bandwidth:
+% \begin{equation*}
+%     t_i^{c} = \left\{
+%         \begin{aligned}
+%             &t_{i-1}^{c} + T_c(o_i, x_i, r_c-R(\hat{\textit{\textbf{O}}}_c, o_i)),&&1\le i\le n \land x_i\le x'_i \\
+%             &max(T_c(o_i, x_i, r_c-R(\hat{\textit{\textbf{O}}}_c, o_i)) +\\
+%             & \enspace \enspace t_{i-1}^{c}, \enspace \frac{1}{b}D(o_i, x'_i-x_i,r)+ t_i^{s}),&&1\le i\le n \land x_i >x'_i
+%         \end{aligned}
+%     \right.
+% \end{equation*}
+
+% \begin{equation*}
+%     t_i^{s} = \left\{
+%         \begin{aligned}
+%             &t_{i-1}^{s} + T_s(o_i, 1-x_i, r_s-R(\hat{\textit{\textbf{O}}}_c, o_i)),&&1\le i\le n \land x_i\ge x'_i \\
+%             &max(T_s(o_i, 1-x_i, r_s-R(\hat{\textit{\textbf{O}}}_c, o_i)) + \\
+%             & \enspace \enspace t_{i-1}^{s}, \enspace \frac{1}{b} D(o_i, x'_i-x_i,r_s)+ t_i^{c}),&&1\le i\le n \land x_i<x'_i
+%         \end{aligned}
+%     \right.
+% \end{equation*}
+% The first rows of the above two equations describe the scenarios where either the robot or the server does not need to receive data from the opposite side and thus the finishing time of this operator only depends on its local execution time.
+% The second rows instead describe the opposite scenarios, where either the robot or the server needs to receive data from the opposite side (e.g., $x_i > x'_i$ for the robot) and have to wait until the same operator to finish computing at the opposite side and then be transmitted at bandwidth $b$.
+
+% With the above statements, optimizing the end-to-end inference latency for the visual model with cache enabled at a given bandwidth $b$ and cache ratios $r_c$ and $r_s$ is to solve
+% \begin{equation}
+%     \begin{aligned}
+%         \min\limits_{\textit{\textbf{X}}} & t_n^{c} \\
+%          s.t. \enspace \enspace&  x_1 = x_n = 1 \\
+%          & \forall j \in \textit{\textbf{O}}_{nonlocal}, x_j (mod \enspace 1) = 0 \\
+%          & \forall j \notin \hat{\textit{\textbf{O}}}_c, x_j = x'_j
+%     \end{aligned}
+%     \label{eq:e2e}
+% \end{equation}
+% In Equation~\ref{eq:e2e}, the first two constraints ensure that inference output will finally be located at the robot and non-local operators will always have full input; the third constraint ensures that offloading will not happen within an operator whose cached is merged into the cache of other operators, since we cannot recover the operator's whole feature map.
+% We solve both optimization problems in Equation~\ref{eq:cached op} and~\ref{eq:e2e} with the differential evolution algorithm~\cite{qin2008differential} and store the solutions of different bandwidth and cache ratios of Equation~\ref{eq:e2e} in a dictionary referred to as $Schedule$.
+
+% The resulting algorithms of CacheInf at both the robot and the server are presented in Algorithm~\ref{alg:client} and Algorithm~\ref{alg:server}.
+% Line 1 to 3 in Algorithm~\ref{alg:client} and Line 1 to 4 in Algorithm~\ref{alg:server} profile the model at both the robot and the server and compute a schedule as described in Section~\ref{sec:schedule}, where the computation is located on the server to speed up computation.
+% The rest of Algorithm~\ref{alg:server} is basically mirrored from that of Algorithm~\ref{alg:client} and thus we focus on Algorithm~\ref{alg:client} for simplicity.
+
 % \begin{algorithm}[htbp]
-% \caption{\small CacheInfServer\label{alg:server}}
-% \SetKwInput{KwInput}{Input}                % Set the Input
-% \SetKwInput{KwOutput}{Output}              % set the Output
-% \DontPrintSemicolon
-%     \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $Y_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
-%     \tcp{\footnotesize profile phase on server}    
-%     $model,info\_robot = ReceiveFromClient()$    
-%     $info\_server = ProfileModel(model)$    
-%     $X, Y, M, N = LOSS(info\_robot,info\_server)$    
-%     $SendToClient(X,M,N)$    
-%     \tcp{\footnotesize inference phase on robot}    
-%     $b = PredictsBandwidth()$    
-%     $Z_{0} = \emptyset$    
-%     \ForEach {$i_{th} \quad layer \quad in\quad model$ }{    
-%     \If{$M_{i}^{b} \neq \emptyset$}
-%     {    
-%     $SendToClient(Z_{i}, M_{i}^{b})$        
-%     }    
-%     \If{$N_{i}^{b} \neq \emptyset$}
-%     {      
-%     $Z_{i} = combine(Z_{i}, ReceiveFromClient())$        
-%     }    
-%         \If{$Y_{i}^{b} \neq \emptyset$ and $Z_{i} \neq \emptyset$}
-%     {    
-%         $Z_{i+1} = compute(Z_{i},Y_{i}^{b})$        
-%     }
-%     \Else{    
-%     $Z_{i+1} = \emptyset$
-%     }    
-%     }       
+%     \caption{\small CacheInfClient\label{alg:client}}
+%     \SetKwInput{KwInput}{Input}                % Set the Input
+%     \SetKwInput{KwOutput}{Output}              % set the Output
+%     \DontPrintSemicolon
+%       \KwInput{\small A continual sequence of video images $\textit{\textbf{I}}$; DNN model $M$}
+%       \KwOutput{\small The inference results $ret$ on each image in $\textit{\textbf{I}}$ }
+%     %   \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $X_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
+%        \tcp{\footnotesize profile}
+    
+%         $T_c, U_c = Profile(M)$
+    
+%         $Send(M, T_c, U_c)$
+    
+%         $Schedule, \hat{\textit{\textbf{O}}}_c = Receive()$
+
+%         $Cache = InitCache(\hat{\textit{\textbf{O}}}_c)$
+
+%        \tcp{\footnotesize inference}
+
+%        \ForEach{$I \enspace in \enspace \textit{\textbf{I}}$ \enspace}{
+%             $b = EstimateBandwidth()$
+
+%             $r_c, r_s = AnalyzeCacheRatio(I, Cache[1])$
+
+%             $inp, M = IdentifyCache(I, Cache[1])$
+
+%             $ Send(b, r_c, r_s, M) $
+
+%             $x, x' = Schedule[b,r_c,r_s]$
+
+%             \ForEach{$i = 1, 2, ..., n $ \enspace}{
+%                 \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i>0$ and IsSparse(inp)}{
+%                     $inp = DenseRecover(inp, Cache[i],M)$
+
+%                     $UpdateCache(Cache[i], inp, M)$
+%                 }
+%                 \ElseIf{$x'_i>0$ and $i\in \hat{\textit{\textbf{O}}}_c$}{
+%                     $inp = SparseGather(inp, Cache[i], M)$
+    
+%                     $UpdateCache(Cache[i], inp, M)$
+%                 }
+%                 \If{$x_i < x'_i$}{
+%                     $inp, inp' = Slice(inp, x_i, x'_i)$
+
+%                     $Send(inp')$
+%                 }
+%                 \ElseIf{$x_i > x'_i$}{
+%                     $inp = Merge(inp, Receive())$
+%                 }
+%                 \If{$x_i>0$}{
+%                     \If{$IsSparse(inp)$}{
+%                         $inp = SparseExecute(o_i, inp)$ 
+%                     }
+%                     \Else{
+%                         $inp = Execute(o_i, inp)$
+%                     }
+%                 }
+
+%             }
+%             $ret[I] = inp$
+%        }
+      
+% \KwRet{$ret$}
+
 % \end{algorithm}
+
+
+% Line 6 to 8 in Algorithm~\ref{alg:client} identifies the reusable cache by matching features between the input image $I$ and its cached counterpart $Cache[1]$ and gets the homography matrix $M$ and the sparse uncached input that needs to be recomputed.
+% After communicating info of bandwidth, cache ratio and homography matrix with the server, we query the $Schedule$ to get input ratio $x$ and parent operator input ratio $x'$ as described in Section~\ref{sec:schedule}.
+% The we start executing each operator $o_i$ involved in the model sequentially.
+% We recover the whole input by combining sparse input $inp$ with cache for non-local operators or gather extra pixels from cache for $inp$ for sparse local operator computation at cached operators at line 12 to 19.
+% When offloading is required to accelerate inference, we send a slice of $inp$ to the server or merge received partial input from the server to $inp$ at line 20 to 26.
+% When $inp$ is finally ready and not empty, we execute the operator $o_i$ with inp where we choose the sparse local operator for sparse input and choose the original operator for dense input at line 27 to 34.
+
+
+% \begin{algorithm}[htbp]
+%     \caption{\small CacheInfServer\label{alg:server}}
+%     % \SetKwInput{KwInput}{Input}                % Set the Input
+%     % \SetKwInput{KwOutput}{Output}              % set the Output
+%     % \DontPrintSemicolon
+%     %   \KwInput{\small A continual sequence of video images $\textit{\textbf{I}}$; DNN model $M$}
+%     %   \KwOutput{\small The inference results $ret$ on each image in $\textit{\textbf{I}}$ }
+%     % %   \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $X_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
+%        \tcp{\footnotesize profile and compute schedule at the server}
+    
+%         $ M,T_c, U_c = Receive()$
+
+%         $T_s, U_s = Profile(M)$
+
+%         $Schedule, \hat{\textit{\textbf{O}}}_c = ComputeSchedule(T_s, U_s, T_c, U_c)$
+
+%         $ Send(Schedule, \hat{\textit{\textbf{O}}}_c) $
+
+%         $Cache = InitCache(\hat{\textit{\textbf{O}}}_c)$
+
+%        \tcp{\footnotesize inference}
+
+%         \While{True}{
+%             $ b, r_c, r_s, M = Receive()$ 
+
+%             $x, x' = Schedule[b,r_c,r_s]$
+
+%             \ForEach{$i = 1, 2, ..., n $ \enspace}{
+%                 \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i<1$ and IsSparse(inp)}{
+%                     $inp = DenseRecover(inp, Cache[i],M)$
+
+%                     $UpdateCache(Cache[i], inp, M)$
+%                 }
+%                 \ElseIf{$x'_i<1$ and $i\in \hat{\textit{\textbf{O}}}_c$}{
+%                     $inp = SparseGather(inp, Cache[i], M)$
+
+%                     $UpdateCache(Cache[i], inp, M)$
+%                 }
+%                 \If{$x_i > x'_i$}{
+%                     $inp, inp' = Slice(inp, x_i, x'_i)$
+
+%                     $Send(inp')$
+%                 }
+%                 \ElseIf{$x_i < x'_i$}{
+%                     $inp = Merge(inp, Receive())$
+%                 }
+
+%                 \If{$x_i < 1$}{
+%                     \If{$IsSparse(inp)$}{
+%                         $inp = SparseExecute(o_i, inp)$ 
+%                     }
+%                     \Else{$inp = Execute(o_i, inp)$ }
+%                 }
+
+%             }
+%        }
+% \end{algorithm}
+    
+    
+% % \begin{algorithm}[htbp]
+% % \caption{\small CacheInfServer\label{alg:server}}
+% % \SetKwInput{KwInput}{Input}                % Set the Input
+% % \SetKwInput{KwOutput}{Output}              % set the Output
+% % \DontPrintSemicolon
+% %     \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $Y_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
+% %     \tcp{\footnotesize profile phase on server}    
+% %     $model,info\_robot = ReceiveFromClient()$    
+% %     $info\_server = ProfileModel(model)$    
+% %     $X, Y, M, N = LOSS(info\_robot,info\_server)$    
+% %     $SendToClient(X,M,N)$    
+% %     \tcp{\footnotesize inference phase on robot}    
+% %     $b = PredictsBandwidth()$    
+% %     $Z_{0} = \emptyset$    
+% %     \ForEach {$i_{th} \quad layer \quad in\quad model$ }{    
+% %     \If{$M_{i}^{b} \neq \emptyset$}
+% %     {    
+% %     $SendToClient(Z_{i}, M_{i}^{b})$        
+% %     }    
+% %     \If{$N_{i}^{b} \neq \emptyset$}
+% %     {      
+% %     $Z_{i} = combine(Z_{i}, ReceiveFromClient())$        
+% %     }    
+% %         \If{$Y_{i}^{b} \neq \emptyset$ and $Z_{i} \neq \emptyset$}
+% %     {    
+% %         $Z_{i+1} = compute(Z_{i},Y_{i}^{b})$        
+% %     }
+% %     \Else{    
+% %     $Z_{i+1} = \emptyset$
+% %     }    
+% %     }       
+% % \end{algorithm}
 
 
 
