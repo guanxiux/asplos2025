@@ -54,15 +54,24 @@ We adopt such setting to maintain stable computation performance of the robot ac
 % We evaluated two real-world environments: indoors (robots move in our laboratory with desks and separators interfering with wireless signals) and outdoors (robots move in our campus garden with trees and bushes interfering with wireless signals, resulting in lower bandwidth). 
 
 \myparagraph{Baselines}
-We selected a state-of-the-art cached-based computation reduction method EVA2~\cite{buckler_eva_2018}
-We selected two SOTA inference acceleration methods as baselines: DSCCS~\cite{liang2023dnn} (referred to as DS), which searches for optimal layer partition strategy of a visual model to offload layers to the GPU server to accelerate inference, and Hybrid-Parallel ~\cite{sun2024hybridparallel} (referred to as HP), which enables parallelization of local computation and offloading by also partitioning within the output of local operators besides layer partitioning to further accelerate inference. 
-We also combined DSCCS with our cache mechanism (referred to as DS-C) to present another perspective about our cache mechanism.
+We selected a state-of-the-art (SOTA) cached-based computation reduction method called EVA2~\cite{buckler_eva_2018} and a state-of-the-art (SOTA) computation offloading method, Hybrid-Parallel ~\cite{sun2024hybridparallel} (referred to as HP) as the major baselines.
+EVA2 reuses the cached activations when the detected MSE of the input image compared with the cached input image is below a threshold or wholly recomputes otherwise.
+HP splits the input image in parallel computes and offloads different splits of the input to accelerate computation offloading.
+
+We integrated EVA2 with HP to enable computation offloading by default for fair comparison, and we alter its MSE threshold to two levels high and low to emulate different choices when EVA2 is applied to moving cameras: high MSE threshold means recomputation will be less likely to be triggered for more activation reusing; low MSE threshold will more frequently trigger recomputation for higher accuracy. 
+We also compared its performance with low MSE threshold when computing locally.
+These results in three evaluation items: EVA2(H), EVA2(L) and EVA2(L)-L for EVA2 with HP and high MSE threshold, EVA2 with HP and low MSE threshold and local version of EVA2 with low MSE threshold.
+
+We also show the performance of direct local computation of the applications to demonstrate the effectiveness of all these systems.
 We refer to CacheInf as Ours in the tables.
 Each result in the tables is followed with standard deviation ($\pm n$).
 
+% We selected two SOTA inference acceleration methods as baselines: DSCCS~\cite{liang2023dnn} (referred to as DS), which searches for optimal layer partition strategy of a visual model to offload layers to the GPU server to accelerate inference, and Hybrid-Parallel ~\cite{sun2024hybridparallel} (referred to as HP), which enables parallelization of local computation and offloading by also partitioning within the output of local operators besides layer partitioning to further accelerate inference. 
+% We also combined DSCCS with our cache mechanism (referred to as DS-C) to present another perspective about our cache mechanism.
+
 The evaluation questions are as follows:
 \begin{itemize}
-    \item RQ1: How much does CacheInf benefit real-world robotic applications by reducing inference time and energy consumption?
+    \item RQ1: How much does CacheInf benefit real-world robotic applications in terms of inference time, inference accuracy and energy consumption?
     \item RQ2: How does CacheInf perform on more models common to mobile devices?
     \item RQ3: How is the above gain achieved in CacheInf and what affects it?
     \item RQ4: The limitations and potentials of CacheInf.
