@@ -200,219 +200,219 @@ If the placement is at the GPU server side, the inference results will be transm
 % Solving of this optimization problem seeks the optimal choices of cache operators $\hat{\textit{\textbf{O}}}_c$ that minimizes local execution time averaged across all possible cache ratio.
 % Note that we do not need to explicitly consider memory consumption because the latter term in Equation~\ref{eq:cached op} will naturally reduce the number of cached operators and favor operators with smaller size of input and thus shorter time to update cache.
 
-% \subsubsection{Schedule of Offloading\label{sec:schedule}}
-% Finally, we are combining all the above components to schedule for computation and offloading in a cache-aware way to optimize end-to-end inference latency for robotic visual models.
-% With Hybrid-Parallel integrated, cache can exists partially both at the robot and the server and we analyze the cache ratio on robot $r_c$ and the cache ratio $r_s$ on server by enquiry the current cached pixels with the previous slice of input (i.e., $x_i$).
-% For an $x_i$, we define the minimum portion of locally executed input of its parent operators (i.e., operators whose output is the input of $o_i$) as $x'_i$ and different between $x_i$ indicates offloading to/from the server.
-% For every operator $o_i \in \textit{\textbf{O}}$ involved in a visual model, we define its finishing time since the first operator starts executing as $t_i^{c}$ on the robot ($c$ means client) and $t_i^{s}$ on server.
+\subsection{End-to-End Runtime\label{sec:schedule}}
+Finally, we are combining all the above components to schedule for computation and offloading in a cache-aware way to optimize end-to-end inference latency for robotic visual models.
+With Hybrid-Parallel integrated, cache can exists partially both at the robot and the server and we analyze the cache ratio on robot $r_c$ and the cache ratio $r_s$ on server by enquiry the current cached pixels with the previous slice of input (i.e., $x_i$).
+For an $x_i$, we define the minimum portion of locally executed input of its parent operators (i.e., operators whose output is the input of $o_i$) as $x'_i$ and different between $x_i$ indicates offloading to/from the server.
+For every operator $o_i \in \textit{\textbf{O}}$ involved in a visual model, we define its finishing time since the first operator starts executing as $t_i^{c}$ on the robot ($c$ means client) and $t_i^{s}$ on server.
 
-% We can have the finish time of each operator on the robot and the server as the following, where $D(o_i, x'_i-x_i,r)$ is the data volume needed to be transmitted at operator $o_i$ with cache ratios $r_c$ and $r_s$ and $b$ is the estimated bandwidth:
-% \begin{equation*}
-%     t_i^{c} = \left\{
-%         \begin{aligned}
-%             &t_{i-1}^{c} + T_c(o_i, x_i, r_c-R(\hat{\textit{\textbf{O}}}_c, o_i)),&&1\le i\le n \land x_i\le x'_i \\
-%             &max(T_c(o_i, x_i, r_c-R(\hat{\textit{\textbf{O}}}_c, o_i)) +\\
-%             & \enspace \enspace t_{i-1}^{c}, \enspace \frac{1}{b}D(o_i, x'_i-x_i,r)+ t_i^{s}),&&1\le i\le n \land x_i >x'_i
-%         \end{aligned}
-%     \right.
-% \end{equation*}
+We can have the finish time of each operator on the robot and the server as the following, where $D(o_i, x'_i-x_i,r)$ is the data volume needed to be transmitted at operator $o_i$ with cache ratios $r_c$ and $r_s$ and $b$ is the estimated bandwidth:
+\begin{equation*}
+    t_i^{c} = \left\{
+        \begin{aligned}
+            &t_{i-1}^{c} + T_c(o_i, x_i, r_c-R(\hat{\textit{\textbf{O}}}_c, o_i)),&&1\le i\le n \land x_i\le x'_i \\
+            &max(T_c(o_i, x_i, r_c-R(\hat{\textit{\textbf{O}}}_c, o_i)) +\\
+            & \enspace \enspace t_{i-1}^{c}, \enspace \frac{1}{b}D(o_i, x'_i-x_i,r)+ t_i^{s}),&&1\le i\le n \land x_i >x'_i
+        \end{aligned}
+    \right.
+\end{equation*}
 
-% \begin{equation*}
-%     t_i^{s} = \left\{
-%         \begin{aligned}
-%             &t_{i-1}^{s} + T_s(o_i, 1-x_i, r_s-R(\hat{\textit{\textbf{O}}}_c, o_i)),&&1\le i\le n \land x_i\ge x'_i \\
-%             &max(T_s(o_i, 1-x_i, r_s-R(\hat{\textit{\textbf{O}}}_c, o_i)) + \\
-%             & \enspace \enspace t_{i-1}^{s}, \enspace \frac{1}{b} D(o_i, x'_i-x_i,r_s)+ t_i^{c}),&&1\le i\le n \land x_i<x'_i
-%         \end{aligned}
-%     \right.
-% \end{equation*}
-% The first rows of the above two equations describe the scenarios where either the robot or the server does not need to receive data from the opposite side and thus the finishing time of this operator only depends on its local execution time.
-% The second rows instead describe the opposite scenarios, where either the robot or the server needs to receive data from the opposite side (e.g., $x_i > x'_i$ for the robot) and have to wait until the same operator to finish computing at the opposite side and then be transmitted at bandwidth $b$.
+\begin{equation*}
+    t_i^{s} = \left\{
+        \begin{aligned}
+            &t_{i-1}^{s} + T_s(o_i, 1-x_i, r_s-R(\hat{\textit{\textbf{O}}}_c, o_i)),&&1\le i\le n \land x_i\ge x'_i \\
+            &max(T_s(o_i, 1-x_i, r_s-R(\hat{\textit{\textbf{O}}}_c, o_i)) + \\
+            & \enspace \enspace t_{i-1}^{s}, \enspace \frac{1}{b} D(o_i, x'_i-x_i,r_s)+ t_i^{c}),&&1\le i\le n \land x_i<x'_i
+        \end{aligned}
+    \right.
+\end{equation*}
+The first rows of the above two equations describe the scenarios where either the robot or the server does not need to receive data from the opposite side and thus the finishing time of this operator only depends on its local execution time.
+The second rows instead describe the opposite scenarios, where either the robot or the server needs to receive data from the opposite side (e.g., $x_i > x'_i$ for the robot) and have to wait until the same operator to finish computing at the opposite side and then be transmitted at bandwidth $b$.
 
-% With the above statements, optimizing the end-to-end inference latency for the visual model with cache enabled at a given bandwidth $b$ and cache ratios $r_c$ and $r_s$ is to solve
-% \begin{equation}
-%     \begin{aligned}
-%         \min\limits_{\textit{\textbf{X}}} & t_n^{c} \\
-%          s.t. \enspace \enspace&  x_1 = x_n = 1 \\
-%          & \forall j \in \textit{\textbf{O}}_{nonlocal}, x_j (mod \enspace 1) = 0 \\
-%          & \forall j \notin \hat{\textit{\textbf{O}}}_c, x_j = x'_j
-%     \end{aligned}
-%     \label{eq:e2e}
-% \end{equation}
-% In Equation~\ref{eq:e2e}, the first two constraints ensure that inference output will finally be located at the robot and non-local operators will always have full input; the third constraint ensures that offloading will not happen within an operator whose cached is merged into the cache of other operators, since we cannot recover the operator's whole feature map.
+With the above statements, optimizing the end-to-end inference latency for the visual model with cache enabled at a given bandwidth $b$ and cache ratios $r_c$ and $r_s$ is to solve
+\begin{equation}
+    \begin{aligned}
+        \min\limits_{\textit{\textbf{X}}} & t_n^{c} \\
+         s.t. \enspace \enspace&  x_1 = x_n = 1 \\
+         & \forall j \in \textit{\textbf{O}}_{nonlocal}, x_j (mod \enspace 1) = 0 \\
+         & \forall j \notin \hat{\textit{\textbf{O}}}_c, x_j = x'_j
+    \end{aligned}
+    \label{eq:e2e}
+\end{equation}
+In Equation~\ref{eq:e2e}, the first two constraints ensure that inference output will finally be located at the robot and non-local operators will always have full input; the third constraint ensures that offloading will not happen within an operator whose cached is merged into the cache of other operators, since we cannot recover the operator's whole feature map.
 % We solve both optimization problems in Equation~\ref{eq:cached op} and~\ref{eq:e2e} with the differential evolution algorithm~\cite{qin2008differential} and store the solutions of different bandwidth and cache ratios of Equation~\ref{eq:e2e} in a dictionary referred to as $Schedule$.
 
-% The resulting algorithms of CacheInf at both the robot and the server are presented in Algorithm~\ref{alg:client} and Algorithm~\ref{alg:server}.
-% Line 1 to 3 in Algorithm~\ref{alg:client} and Line 1 to 4 in Algorithm~\ref{alg:server} profile the model at both the robot and the server and compute a schedule as described in Section~\ref{sec:schedule}, where the computation is located on the server to speed up computation.
-% The rest of Algorithm~\ref{alg:server} is basically mirrored from that of Algorithm~\ref{alg:client} and thus we focus on Algorithm~\ref{alg:client} for simplicity.
+The resulting algorithms of CacheInf at both the robot and the server are presented in Algorithm~\ref{alg:client} and Algorithm~\ref{alg:server}.
+Line 1 to 3 in Algorithm~\ref{alg:client} and Line 1 to 4 in Algorithm~\ref{alg:server} profile the model at both the robot and the server and compute a schedule as described in Section~\ref{sec:schedule}, where the computation is located on the server to speed up computation.
+The rest of Algorithm~\ref{alg:server} is basically mirrored from that of Algorithm~\ref{alg:client} and thus we focus on Algorithm~\ref{alg:client} for simplicity.
 
-% \begin{algorithm}[htbp]
-%     \caption{\small CacheInfClient\label{alg:client}}
-%     \SetKwInput{KwInput}{Input}                % Set the Input
-%     \SetKwInput{KwOutput}{Output}              % set the Output
-%     \DontPrintSemicolon
-%       \KwInput{\small A continual sequence of video images $\textit{\textbf{I}}$; DNN model $M$}
-%       \KwOutput{\small The inference results $ret$ on each image in $\textit{\textbf{I}}$ }
-%     %   \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $X_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
-%        \tcp{\footnotesize profile}
+\begin{algorithm}[htbp]
+    \caption{\small CacheInfClient\label{alg:client}}
+    \SetKwInput{KwInput}{Input}                % Set the Input
+    \SetKwInput{KwOutput}{Output}              % set the Output
+    \DontPrintSemicolon
+      \KwInput{\small A continual sequence of video images $\textit{\textbf{I}}$; DNN model $M$}
+      \KwOutput{\small The inference results $ret$ on each image in $\textit{\textbf{I}}$ }
+    %   \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $X_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
+       \tcp{\footnotesize profile}
     
-%         $T_c, U_c = Profile(M)$
+        $T_c, U_c = Profile(M)$
     
-%         $Send(M, T_c, U_c)$
+        $Send(M, T_c, U_c)$
     
-%         $Schedule, \hat{\textit{\textbf{O}}}_c = Receive()$
+        $Schedule, \hat{\textit{\textbf{O}}}_c = Receive()$
 
-%         $Cache = InitCache(\hat{\textit{\textbf{O}}}_c)$
+        $Cache = InitCache(\hat{\textit{\textbf{O}}}_c)$
 
-%        \tcp{\footnotesize inference}
+       \tcp{\footnotesize inference}
 
-%        \ForEach{$I \enspace in \enspace \textit{\textbf{I}}$ \enspace}{
-%             $b = EstimateBandwidth()$
+       \ForEach{$I \enspace in \enspace \textit{\textbf{I}}$ \enspace}{
+            $b = EstimateBandwidth()$
 
-%             $r_c, r_s = AnalyzeCacheRatio(I, Cache[1])$
+            $r_c, r_s = AnalyzeCacheRatio(I, Cache[1])$
 
-%             $inp, M = IdentifyCache(I, Cache[1])$
+            $inp, M = IdentifyCache(I, Cache[1])$
 
-%             $ Send(b, r_c, r_s, M) $
+            $ Send(b, r_c, r_s, M) $
 
-%             $x, x' = Schedule[b,r_c,r_s]$
+            $x, x' = Schedule[b,r_c,r_s]$
 
-%             \ForEach{$i = 1, 2, ..., n $ \enspace}{
-%                 \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i>0$ and IsSparse(inp)}{
-%                     $inp = DenseRecover(inp, Cache[i],M)$
+            \ForEach{$i = 1, 2, ..., n $ \enspace}{
+                \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i>0$ and IsSparse(inp)}{
+                    $inp = DenseRecover(inp, Cache[i],M)$
 
-%                     $UpdateCache(Cache[i], inp, M)$
-%                 }
-%                 \ElseIf{$x'_i>0$ and $i\in \hat{\textit{\textbf{O}}}_c$}{
-%                     $inp = SparseGather(inp, Cache[i], M)$
+                    $UpdateCache(Cache[i], inp, M)$
+                }
+                \ElseIf{$x'_i>0$ and $i\in \hat{\textit{\textbf{O}}}_c$}{
+                    $inp = SparseGather(inp, Cache[i], M)$
     
-%                     $UpdateCache(Cache[i], inp, M)$
-%                 }
-%                 \If{$x_i < x'_i$}{
-%                     $inp, inp' = Slice(inp, x_i, x'_i)$
+                    $UpdateCache(Cache[i], inp, M)$
+                }
+                \If{$x_i < x'_i$}{
+                    $inp, inp' = Slice(inp, x_i, x'_i)$
 
-%                     $Send(inp')$
-%                 }
-%                 \ElseIf{$x_i > x'_i$}{
-%                     $inp = Merge(inp, Receive())$
-%                 }
-%                 \If{$x_i>0$}{
-%                     \If{$IsSparse(inp)$}{
-%                         $inp = SparseExecute(o_i, inp)$ 
-%                     }
-%                     \Else{
-%                         $inp = Execute(o_i, inp)$
-%                     }
-%                 }
+                    $Send(inp')$
+                }
+                \ElseIf{$x_i > x'_i$}{
+                    $inp = Merge(inp, Receive())$
+                }
+                \If{$x_i>0$}{
+                    \If{$IsSparse(inp)$}{
+                        $inp = SparseExecute(o_i, inp)$ 
+                    }
+                    \Else{
+                        $inp = Execute(o_i, inp)$
+                    }
+                }
 
-%             }
-%             $ret[I] = inp$
-%        }
+            }
+            $ret[I] = inp$
+       }
       
-% \KwRet{$ret$}
+\KwRet{$ret$}
 
-% \end{algorithm}
-
-
-% Line 6 to 8 in Algorithm~\ref{alg:client} identifies the reusable cache by matching features between the input image $I$ and its cached counterpart $Cache[1]$ and gets the homography matrix $M$ and the sparse uncached input that needs to be recomputed.
-% After communicating info of bandwidth, cache ratio and homography matrix with the server, we query the $Schedule$ to get input ratio $x$ and parent operator input ratio $x'$ as described in Section~\ref{sec:schedule}.
-% The we start executing each operator $o_i$ involved in the model sequentially.
-% We recover the whole input by combining sparse input $inp$ with cache for non-local operators or gather extra pixels from cache for $inp$ for sparse local operator computation at cached operators at line 12 to 19.
-% When offloading is required to accelerate inference, we send a slice of $inp$ to the server or merge received partial input from the server to $inp$ at line 20 to 26.
-% When $inp$ is finally ready and not empty, we execute the operator $o_i$ with inp where we choose the sparse local operator for sparse input and choose the original operator for dense input at line 27 to 34.
+\end{algorithm}
 
 
+Line 6 to 8 in Algorithm~\ref{alg:client} identifies the reusable cache by matching features between the input image $I$ and its cached counterpart $Cache[1]$ and gets the homography matrix $M$ and the sparse uncached input that needs to be recomputed.
+After communicating info of bandwidth, cache ratio and homography matrix with the server, we query the $Schedule$ to get input ratio $x$ and parent operator input ratio $x'$ as described in Section~\ref{sec:schedule}.
+The we start executing each operator $o_i$ involved in the model sequentially.
+We recover the whole input by combining sparse input $inp$ with cache for non-local operators or gather extra pixels from cache for $inp$ for sparse local operator computation at cached operators at line 12 to 19.
+When offloading is required to accelerate inference, we send a slice of $inp$ to the server or merge received partial input from the server to $inp$ at line 20 to 26.
+When $inp$ is finally ready and not empty, we execute the operator $o_i$ with inp where we choose the sparse local operator for sparse input and choose the original operator for dense input at line 27 to 34.
+
+
+\begin{algorithm}[htbp]
+    \caption{\small CacheInfServer\label{alg:server}}
+    % \SetKwInput{KwInput}{Input}                % Set the Input
+    % \SetKwInput{KwOutput}{Output}              % set the Output
+    % \DontPrintSemicolon
+    %   \KwInput{\small A continual sequence of video images $\textit{\textbf{I}}$; DNN model $M$}
+    %   \KwOutput{\small The inference results $ret$ on each image in $\textit{\textbf{I}}$ }
+    % %   \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $X_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
+       \tcp{\footnotesize profile and compute schedule at the server}
+    
+        $ M,T_c, U_c = Receive()$
+
+        $T_s, U_s = Profile(M)$
+
+        $Schedule, \hat{\textit{\textbf{O}}}_c = ComputeSchedule(T_s, U_s, T_c, U_c)$
+
+        $ Send(Schedule, \hat{\textit{\textbf{O}}}_c) $
+
+        $Cache = InitCache(\hat{\textit{\textbf{O}}}_c)$
+
+       \tcp{\footnotesize inference}
+
+        \While{True}{
+            $ b, r_c, r_s, M = Receive()$ 
+
+            $x, x' = Schedule[b,r_c,r_s]$
+
+            \ForEach{$i = 1, 2, ..., n $ \enspace}{
+                \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i<1$ and IsSparse(inp)}{
+                    $inp = DenseRecover(inp, Cache[i],M)$
+
+                    $UpdateCache(Cache[i], inp, M)$
+                }
+                \ElseIf{$x'_i<1$ and $i\in \hat{\textit{\textbf{O}}}_c$}{
+                    $inp = SparseGather(inp, Cache[i], M)$
+
+                    $UpdateCache(Cache[i], inp, M)$
+                }
+                \If{$x_i > x'_i$}{
+                    $inp, inp' = Slice(inp, x_i, x'_i)$
+
+                    $Send(inp')$
+                }
+                \ElseIf{$x_i < x'_i$}{
+                    $inp = Merge(inp, Receive())$
+                }
+
+                \If{$x_i < 1$}{
+                    \If{$IsSparse(inp)$}{
+                        $inp = SparseExecute(o_i, inp)$ 
+                    }
+                    \Else{$inp = Execute(o_i, inp)$ }
+                }
+
+            }
+       }
+\end{algorithm}
+    
+    
 % \begin{algorithm}[htbp]
-%     \caption{\small CacheInfServer\label{alg:server}}
-%     % \SetKwInput{KwInput}{Input}                % Set the Input
-%     % \SetKwInput{KwOutput}{Output}              % set the Output
-%     % \DontPrintSemicolon
-%     %   \KwInput{\small A continual sequence of video images $\textit{\textbf{I}}$; DNN model $M$}
-%     %   \KwOutput{\small The inference results $ret$ on each image in $\textit{\textbf{I}}$ }
-%     % %   \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $X_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
-%        \tcp{\footnotesize profile and compute schedule at the server}
-    
-%         $ M,T_c, U_c = Receive()$
-
-%         $T_s, U_s = Profile(M)$
-
-%         $Schedule, \hat{\textit{\textbf{O}}}_c = ComputeSchedule(T_s, U_s, T_c, U_c)$
-
-%         $ Send(Schedule, \hat{\textit{\textbf{O}}}_c) $
-
-%         $Cache = InitCache(\hat{\textit{\textbf{O}}}_c)$
-
-%        \tcp{\footnotesize inference}
-
-%         \While{True}{
-%             $ b, r_c, r_s, M = Receive()$ 
-
-%             $x, x' = Schedule[b,r_c,r_s]$
-
-%             \ForEach{$i = 1, 2, ..., n $ \enspace}{
-%                 \If{$i \in \textit{\textbf{O}}_{nonlocal}$ and $x_i<1$ and IsSparse(inp)}{
-%                     $inp = DenseRecover(inp, Cache[i],M)$
-
-%                     $UpdateCache(Cache[i], inp, M)$
-%                 }
-%                 \ElseIf{$x'_i<1$ and $i\in \hat{\textit{\textbf{O}}}_c$}{
-%                     $inp = SparseGather(inp, Cache[i], M)$
-
-%                     $UpdateCache(Cache[i], inp, M)$
-%                 }
-%                 \If{$x_i > x'_i$}{
-%                     $inp, inp' = Slice(inp, x_i, x'_i)$
-
-%                     $Send(inp')$
-%                 }
-%                 \ElseIf{$x_i < x'_i$}{
-%                     $inp = Merge(inp, Receive())$
-%                 }
-
-%                 \If{$x_i < 1$}{
-%                     \If{$IsSparse(inp)$}{
-%                         $inp = SparseExecute(o_i, inp)$ 
-%                     }
-%                     \Else{$inp = Execute(o_i, inp)$ }
-%                 }
-
-%             }
-%        }
+% \caption{\small CacheInfServer\label{alg:server}}
+% \SetKwInput{KwInput}{Input}                % Set the Input
+% \SetKwInput{KwOutput}{Output}              % set the Output
+% \DontPrintSemicolon
+%     \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $Y_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
+%     \tcp{\footnotesize profile phase on server}    
+%     $model,info\_robot = ReceiveFromClient()$    
+%     $info\_server = ProfileModel(model)$    
+%     $X, Y, M, N = LOSS(info\_robot,info\_server)$    
+%     $SendToClient(X,M,N)$    
+%     \tcp{\footnotesize inference phase on robot}    
+%     $b = PredictsBandwidth()$    
+%     $Z_{0} = \emptyset$    
+%     \ForEach {$i_{th} \quad layer \quad in\quad model$ }{    
+%     \If{$M_{i}^{b} \neq \emptyset$}
+%     {    
+%     $SendToClient(Z_{i}, M_{i}^{b})$        
+%     }    
+%     \If{$N_{i}^{b} \neq \emptyset$}
+%     {      
+%     $Z_{i} = combine(Z_{i}, ReceiveFromClient())$        
+%     }    
+%         \If{$Y_{i}^{b} \neq \emptyset$ and $Z_{i} \neq \emptyset$}
+%     {    
+%         $Z_{i+1} = compute(Z_{i},Y_{i}^{b})$        
+%     }
+%     \Else{    
+%     $Z_{i+1} = \emptyset$
+%     }    
+%     }       
 % \end{algorithm}
-    
-    
-% % \begin{algorithm}[htbp]
-% % \caption{\small CacheInfServer\label{alg:server}}
-% % \SetKwInput{KwInput}{Input}                % Set the Input
-% % \SetKwInput{KwOutput}{Output}              % set the Output
-% % \DontPrintSemicolon
-% %     \KwData{\small input of $i_{th}$ layer $Z_{i}$; schedule plan of $i_{th}$ layer under the $b$ bandwidth $Y_{i}^{b}$, $M_{i}^{b}$,$N_{i}^{b}$}
-% %     \tcp{\footnotesize profile phase on server}    
-% %     $model,info\_robot = ReceiveFromClient()$    
-% %     $info\_server = ProfileModel(model)$    
-% %     $X, Y, M, N = LOSS(info\_robot,info\_server)$    
-% %     $SendToClient(X,M,N)$    
-% %     \tcp{\footnotesize inference phase on robot}    
-% %     $b = PredictsBandwidth()$    
-% %     $Z_{0} = \emptyset$    
-% %     \ForEach {$i_{th} \quad layer \quad in\quad model$ }{    
-% %     \If{$M_{i}^{b} \neq \emptyset$}
-% %     {    
-% %     $SendToClient(Z_{i}, M_{i}^{b})$        
-% %     }    
-% %     \If{$N_{i}^{b} \neq \emptyset$}
-% %     {      
-% %     $Z_{i} = combine(Z_{i}, ReceiveFromClient())$        
-% %     }    
-% %         \If{$Y_{i}^{b} \neq \emptyset$ and $Z_{i} \neq \emptyset$}
-% %     {    
-% %         $Z_{i+1} = compute(Z_{i},Y_{i}^{b})$        
-% %     }
-% %     \Else{    
-% %     $Z_{i+1} = \emptyset$
-% %     }    
-% %     }       
-% % \end{algorithm}
 
 
 
